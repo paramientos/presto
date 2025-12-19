@@ -95,6 +95,25 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 		downloadURL = versionInfo.Source.URL
 	}
 
+	// Skip packages without download URL (usually meta-packages or platform packages)
+	if downloadURL == "" {
+		// This is likely a meta-package or virtual package, skip it
+		r.resolved[name] = version
+
+		// Still resolve its dependencies
+		for depName, depConstraint := range versionInfo.Require {
+			if r.isPlatformPackage(depName) {
+				continue
+			}
+
+			if err := r.resolveDependency(depName, depConstraint, packages); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
 	// Add to packages
 	pkg := &Package{
 		Name:    name,
