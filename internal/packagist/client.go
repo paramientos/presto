@@ -124,14 +124,14 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 	// Parse response - Packagist v2 format has "packages" with package name as key
 	var apiResp struct {
 		Packages map[string][]struct {
-			Version     string            `json:"version"`
-			Description string            `json:"description"`
-			Type        string            `json:"type"`
-			Require     map[string]string `json:"require"`
-			RequireDev  json.RawMessage   `json:"require-dev"` // Can be null, {}, or map
-			Autoload    interface{}       `json:"autoload"`
-			Dist        DistInfo          `json:"dist"`
-			Source      SourceInfo        `json:"source"`
+			Version     string          `json:"version"`
+			Description string          `json:"description"`
+			Type        string          `json:"type"`
+			Require     json.RawMessage `json:"require"`     // Can be null, [], {}, or map
+			RequireDev  json.RawMessage `json:"require-dev"` // Can be null, [], {}, or map
+			Autoload    interface{}     `json:"autoload"`
+			Dist        DistInfo        `json:"dist"`
+			Source      SourceInfo      `json:"source"`
 		} `json:"packages"`
 	}
 
@@ -153,7 +153,15 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 		// Parse require-dev flexibly
 		var requireDev map[string]string
 		if len(v.RequireDev) > 0 && string(v.RequireDev) != "null" {
-			json.Unmarshal(v.RequireDev, &requireDev)
+			// Try to unmarshal as map, ignore errors if it's an array (empty requirements)
+			_ = json.Unmarshal(v.RequireDev, &requireDev)
+		}
+
+		// Parse require flexibly
+		var require map[string]string
+		if len(v.Require) > 0 && string(v.Require) != "null" {
+			// Try to unmarshal as map, ignore errors if it's an array (empty requirements)
+			_ = json.Unmarshal(v.Require, &require)
 		}
 
 		versionMap[v.Version] = &VersionInfo{
@@ -161,7 +169,7 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 			Version:     v.Version,
 			Description: v.Description,
 			Type:        v.Type,
-			Require:     v.Require,
+			Require:     require,
 			RequireDev:  requireDev,
 			Autoload:    v.Autoload,
 			Dist:        v.Dist,
