@@ -160,8 +160,11 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 		// Parse require flexibly
 		var require map[string]string
 		if len(v.Require) > 0 && string(v.Require) != "null" {
+
 			// Try to unmarshal as map, ignore errors if it's an array (empty requirements)
-			_ = json.Unmarshal(v.Require, &require)
+			if err := json.Unmarshal(v.Require, &require); err != nil {
+				// fmt.Printf("DEBUG: Require parse error for %s %s: %v\n", name, v.Version, err)
+			}
 		}
 
 		versionMap[v.Version] = &VersionInfo{

@@ -130,6 +130,7 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 	r.resolved[name] = version
 
 	// Resolve dependencies of this package
+	// fmt.Printf("DEBUG: Resolving dependencies for %s v%s, require count: %d\n", name, version, len(versionInfo.Require))
 	for depName, depConstraint := range versionInfo.Require {
 		if r.isPlatformPackage(depName) {
 			continue
@@ -156,6 +157,9 @@ func (r *Resolver) findMatchingVersion(info *packagist.PackageInfo, constraint s
 	}
 
 	// Find matching version
+	var bestVersion string
+	var bestSemver *semver.Version
+
 	for version := range info.Versions {
 		// Skip dev versions
 		if strings.Contains(version, "dev") {
@@ -170,8 +174,16 @@ func (r *Resolver) findMatchingVersion(info *packagist.PackageInfo, constraint s
 
 		// Check if version matches constraint
 		if c.Check(v) {
-			return version, nil
+			// Choose latest version
+			if bestSemver == nil || v.GreaterThan(bestSemver) {
+				bestSemver = v
+				bestVersion = version
+			}
 		}
+	}
+
+	if bestVersion != "" {
+		return bestVersion, nil
 	}
 
 	return "", fmt.Errorf("no version matches constraint: %s", constraint)

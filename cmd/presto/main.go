@@ -8,6 +8,7 @@ import (
 
 	"github.com/aras/presto/internal/autoload"
 	"github.com/aras/presto/internal/downloader"
+	"github.com/aras/presto/internal/lockfile"
 	"github.com/aras/presto/internal/packagist"
 	"github.com/aras/presto/internal/parser"
 	"github.com/aras/presto/internal/resolver"
@@ -226,6 +227,15 @@ func runInstall() error {
 	gen := autoload.NewGenerator()
 	if err := gen.Generate(composer, packages); err != nil {
 		return fmt.Errorf("autoload generation failed: %w", err)
+	}
+
+	// Generate composer.lock
+	fmt.Println("🔒 Generating composer.lock...")
+	logVerbose("Generating lock file")
+
+	lockGen := lockfile.NewGenerator()
+	if err := lockGen.Generate(composer, packages); err != nil {
+		return fmt.Errorf("lock file generation failed: %w", err)
 	}
 
 	fmt.Println("\n✨ Installation complete!")

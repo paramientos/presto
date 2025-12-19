@@ -5,6 +5,7 @@
     "license": "MIT",
     "require": {
         "guzzlehttp/guzzle": "^7.0",
+        "laravel/framework": "^10.0",
         "php": "^8.1",
         "soysaltan/marygen": "0.34.0",
         "symfony/console": "^6.0"
