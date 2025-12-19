@@ -68,6 +68,40 @@ func (r *Resolver) Resolve(composer *parser.ComposerJSON) ([]*Package, error) {
 // resolveDependency resolves a single dependency recursively
 func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Package) error {
 	// Check if already resolved
+	// Check if already resolved
+	if r.visited[name] {
+		// Conflict Check & Resolution
+		if resolvedVersion, ok := r.resolved[name]; ok {
+			c, err := semver.NewConstraint(r.normalizeConstraint(constraint))
+			if err == nil {
+				v, err := semver.NewVersion(r.normalizeVersion(resolvedVersion))
+				if err == nil {
+					if !c.Check(v) {
+						fmt.Printf("⚠️  CONFLICT FIX: Package %s v%s does not satisfy '%s'. Re-resolving with new constraint...\n", name, resolvedVersion, constraint)
+
+						// Remove the incompatible package from the list
+						for i, pkg := range *packages {
+							if pkg.Name == name {
+								*packages = append((*packages)[:i], (*packages)[i+1:]...)
+								break
+							}
+						}
+
+						// Reset visited status to allow re-fetching/re-resolving
+						r.visited[name] = false
+						// Proceed to fetch the package with the new constraint
+						// Fall through...
+					} else {
+						// Already resolved and compatible
+						return nil
+					}
+				}
+			}
+		} else {
+			return nil
+		}
+	}
+
 	if r.visited[name] {
 		return nil
 	}
@@ -248,11 +282,26 @@ func (r *Resolver) normalizeVersion(version string) string {
 
 // isPlatformPackage checks if a package is a platform requirement
 func (r *Resolver) isPlatformPackage(name string) bool {
-	return strings.HasPrefix(name, "php") ||
+	// Virtual Composer packages (no slash, but not platform either in the traditional sense)
+	if name == "composer-plugin-api" || name == "composer-runtime-api" {
+		return true
+	}
+
+	// If it contains a slash, it's a vendor package (e.g. vendor/package)
+	if strings.Contains(name, "/") {
+		// Exception: Virtual implementation packages provided by other packages
+		// e.g. psr/http-factory-implementation, php-http/client-implementation
+		if strings.HasSuffix(name, "-implementation") {
+			return true
+		}
+		return false
+	}
+
+	// Platform packages don't have slashes
+	return name == "php" ||
+		strings.HasPrefix(name, "php-") || // php-64bit, etc.
 		strings.HasPrefix(name, "ext-") ||
-		strings.HasPrefix(name, "lib-") ||
-		name == "composer-plugin-api" ||
-		name == "composer-runtime-api"
+		strings.HasPrefix(name, "lib-")
 }
 
 // BuildDependencyTree builds a visual dependency tree for a package

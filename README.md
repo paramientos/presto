@@ -3,13 +3,14 @@
 **Lightning-Fast PHP Package Manager - A Composer Drop-in Replacement**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/aras/presto/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.2-blue.svg)](https://github.com/aras/presto/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/aras/presto/actions)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> ⚡ **10x-20x faster** than Composer | 🔒 **Built-in security audit** | 🔍 **Dependency insights** | 💯 **100% compatible**
+> ⚠️ **BETA SOFTWARE**: Presto is currently in **BETA**. While it is functional and fast, it may still have bugs or incomplete features. Use with caution in production environments.
 
+> ⚡ **10x-20x faster** than Composer | 🔒 **Built-in security audit** | 🔍 **Dependency insights** | 💯 **100% compatible**
 
 Presto is a blazing-fast, drop-in replacement for Composer written in Go. It's 100% compatible with `composer.json` and `composer.lock` while being **10x-20x faster** thanks to parallel downloads and native binary execution.
 
@@ -21,7 +22,7 @@ Presto is a blazing-fast, drop-in replacement for Composer written in Go. It's 1
 - Native binary (no PHP JIT overhead)
 - Smart caching system
 
-### 🔒 **Security First** (Killer Feature!)
+### 🔒 **Security First**
 ```bash
 presto audit  # Scan for vulnerabilities
 ```
@@ -29,7 +30,7 @@ presto audit  # Scan for vulnerabilities
 - Real-time security alerts
 - License compliance checking
 
-### 🔍 **Dependency Insights** (Killer Features!)
+### 🔍 **Dependency Insights**
 ```bash
 presto why package/name           # Why is this installed?
 presto why-not package/name 2.0   # Why can't I install this?
@@ -45,23 +46,14 @@ presto why-not package/name 2.0   # Why can't I install this?
 - PSR-4/PSR-0 autoloading
 - Composer scripts support
 
-## 📦 Installation
+## 🛠️ Building
 
-### Homebrew (macOS/Linux)
-```bash
-brew tap aras/presto
-brew install presto
-```
+To build Presto from source:
 
-### Binary Download
-Download the latest binary from [Releases](https://github.com/aras/presto/releases)
-
-### Build from Source
 ```bash
 git clone https://github.com/aras/presto.git
 cd presto
 make build
-sudo make install
 ```
 
 ## 🎯 Usage
@@ -152,17 +144,6 @@ $ presto audit
   Fix: Update to 5.4.31 or later
 ```
 
-```bash
-$ presto why psr/log
-🎵 Why is psr/log installed?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 Dependency chain:
-Your project
-  └─ symfony/console (^6.0)
-      └─ psr/log (^3.0)
-```
-
 ## 🔥 Killer Features
 
 ### 1. **Security Audit**
@@ -209,7 +190,6 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## 🔗 Links
 
-- [Documentation](https://presto.dev/docs)
 - [GitHub](https://github.com/aras/presto)
 - [Issue Tracker](https://github.com/aras/presto/issues)
 - [Discussions](https://github.com/aras/presto/discussions)
