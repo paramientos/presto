@@ -3,7 +3,13 @@
 **Lightning-Fast PHP Package Manager - A Composer Drop-in Replacement**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/aras/presto/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/aras/presto/actions)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+> ⚡ **10x-20x faster** than Composer | 🔒 **Built-in security audit** | 🔍 **Dependency insights** | 💯 **100% compatible**
+
 
 Presto is a blazing-fast, drop-in replacement for Composer written in Go. It's 100% compatible with `composer.json` and `composer.lock` while being **10x-20x faster** thanks to parallel downloads and native binary execution.
 

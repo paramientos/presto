@@ -1,0 +1,25 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Go files
+*.go text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Markdown
+*.md text
+
+# JSON
+*.json text
+
+# YAML
+*.yml text
+*.yaml text
+
+# Exclude from exports
+.gitattributes export-ignore
+.gitignore export-ignore
+.github export-ignore
+examples export-ignore
+scripts/benchmark.sh export-ignore
