@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/aras/presto/internal/autoload"
 	"github.com/aras/presto/internal/downloader"
@@ -196,6 +198,25 @@ func runInstall() error {
 	dl := downloader.NewDownloader(8) // 8 parallel workers
 	if err := dl.DownloadAll(packages); err != nil {
 		return fmt.Errorf("download failed: %w", err)
+	}
+
+	// Update autoload from downloaded packages (source of truth)
+	fmt.Println("🔄 Updating package information...")
+	for _, pkg := range packages {
+		jsonPath := filepath.Join("vendor", pkg.Name, "composer.json")
+		content, err := os.ReadFile(jsonPath)
+		if err != nil {
+			logVerbose("Could not read composer.json for %s: %v", pkg.Name, err)
+			continue
+		}
+
+		var pkgJson struct {
+			Autoload json.RawMessage `json:"autoload"`
+		}
+		if err := json.Unmarshal(content, &pkgJson); err == nil && len(pkgJson.Autoload) > 0 {
+			pkg.Autoload = pkgJson.Autoload
+			logVerbose("Updated autoload for %s from local composer.json", pkg.Name)
+		}
 	}
 
 	// Generate autoload

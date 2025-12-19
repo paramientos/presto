@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -18,10 +19,11 @@ type Resolver struct {
 
 // Package represents a resolved package
 type Package struct {
-	Name    string
-	Version string
-	URL     string
-	Require map[string]string
+	Name     string
+	Version  string
+	URL      string
+	Require  map[string]string
+	Autoload json.RawMessage
 }
 
 // NewResolver creates a new dependency resolver
@@ -116,10 +118,11 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 
 	// Add to packages
 	pkg := &Package{
-		Name:    name,
-		Version: version,
-		URL:     downloadURL,
-		Require: versionInfo.Require,
+		Name:     name,
+		Version:  version,
+		URL:      downloadURL,
+		Require:  versionInfo.Require,
+		Autoload: versionInfo.Autoload,
 	}
 	*packages = append(*packages, pkg)
 

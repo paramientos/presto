@@ -44,7 +44,7 @@ type VersionInfo struct {
 	Authors           []interface{}     `json:"authors"`
 	Require           map[string]string `json:"require"`
 	RequireDev        map[string]string `json:"require-dev"`
-	Autoload          interface{}       `json:"autoload"`
+	Autoload          json.RawMessage   `json:"autoload"`
 	Time              string            `json:"time"`
 	Dist              DistInfo          `json:"dist"`
 	Source            SourceInfo        `json:"source"`
@@ -129,7 +129,7 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 			Type        string          `json:"type"`
 			Require     json.RawMessage `json:"require"`     // Can be null, [], {}, or map
 			RequireDev  json.RawMessage `json:"require-dev"` // Can be null, [], {}, or map
-			Autoload    interface{}     `json:"autoload"`
+			Autoload    json.RawMessage `json:"autoload"`    // Use RawMessage for debugging
 			Dist        DistInfo        `json:"dist"`
 			Source      SourceInfo      `json:"source"`
 		} `json:"packages"`
