@@ -1,0 +1,71 @@
+# Changelog
+
+All notable changes to Presto will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2025-12-19
+
+### Added
+- 🎵 Initial release of Presto
+- Core package management functionality
+  - `presto install` - Install dependencies from composer.json
+  - `presto require` - Add new packages
+  - `presto update` - Update dependencies
+  - `presto remove` - Remove packages
+  - `presto show` - Show installed packages
+  - `presto init` - Initialize new project
+
+### Killer Features
+- 🔒 `presto audit` - Security vulnerability scanning
+- 🔍 `presto why` - Show dependency tree for a package
+- 🚫 `presto why-not` - Explain why a version can't be installed
+
+### Performance
+- Parallel package downloads (8 workers)
+- 10x-20x faster than Composer
+- Smart caching system
+- Native Go binary
+
+### Compatibility
+- 100% compatible with composer.json
+- 100% compatible with composer.lock
+- Works with Packagist.org
+- PSR-4/PSR-0 autoloading support
+
+### Infrastructure
+- Cross-platform support (macOS, Linux, Windows)
+- GitHub Actions CI/CD
+- Automated releases
+- Comprehensive documentation
+
+---
+
+## Future Releases
+
+### [0.2.0] - Planned
+- Composer plugins support
+- Custom repositories (Git, VCS, Path)
+- Composer scripts execution
+- Global package installation
+- Interactive mode
+- Improved error messages
+
+### [0.3.0] - Planned
+- Workspace/monorepo support
+- Build profiles (production, dev, minimal)
+- Delta updates
+- Enhanced security features
+- Performance optimizations
+
+### [1.0.0] - Planned
+- Production-ready release
+- Full Composer compatibility
+- Comprehensive test coverage
+- Stable API
+- Enterprise features
+
+---
+
+[0.1.0]: https://github.com/aras/presto/releases/tag/v0.1.0
