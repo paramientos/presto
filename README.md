@@ -83,6 +83,9 @@ presto remove vendor/package
 # Show installed packages
 presto show
 
+# Show dependency tree (map)
+presto tree
+
 # Security audit (NEW!)
 presto audit
 

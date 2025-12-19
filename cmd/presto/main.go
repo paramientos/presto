@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aras/presto/internal/autoload"
 	"github.com/aras/presto/internal/downloader"
@@ -117,6 +118,16 @@ func main() {
 		},
 	}
 
+	// Tree command
+	treeCmd := &cobra.Command{
+		Use:     "tree",
+		Short:   "🌳 Show dependency tree",
+		Aliases: []string{"map"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTree()
+		},
+	}
+
 	// Cache command
 	cacheCmd := &cobra.Command{
 		Use:   "cache",
@@ -143,6 +154,7 @@ func main() {
 		whyCmd,
 		whyNotCmd,
 		initCmd,
+		treeCmd,
 		cacheCmd,
 	)
 
@@ -465,5 +477,92 @@ func runCacheClear() error {
 	logVerbose("Removed cache directory: %s", cacheDir)
 
 	fmt.Println("✅ Cache cleared")
+	return nil
+}
+
+func runTree() error {
+	fmt.Println("🌳 Generating dependency map...")
+
+	// 1. Parse composer.json
+	pkgJson, err := parser.ParseComposerJSON("composer.json")
+	if err != nil {
+		return fmt.Errorf("failed to parse composer.json: %w", err)
+	}
+
+	// 2. Resolve packages (to get the graph)
+	client := packagist.NewClient()
+	res := resolver.NewResolver(client)
+
+	fmt.Println("🔍 Resolving dependencies (this may take a moment)...")
+	packages, err := res.Resolve(pkgJson)
+	if err != nil {
+		return fmt.Errorf("failed to resolve dependencies: %w", err)
+	}
+
+	// Map packages for quick lookup
+	pkgMap := make(map[string]*resolver.Package)
+	for _, pkg := range packages {
+		pkgMap[pkg.Name] = pkg
+	}
+
+	fmt.Printf("\n📦 %s\n", pkgJson.Name)
+
+	// Traverse
+	var printDeps func(deps map[string]string, prefix string, visited map[string]bool)
+	printDeps = func(deps map[string]string, prefix string, visited map[string]bool) {
+		i := 0
+		count := len(deps)
+
+		// Filter out platform packages from count to properly draw connectors
+		filteredDeps := make([]string, 0, count)
+		for name := range deps {
+			if name == "php" || strings.HasPrefix(name, "ext-") || strings.HasSuffix(name, "-implementation") {
+				continue
+			}
+			filteredDeps = append(filteredDeps, name)
+		}
+		count = len(filteredDeps)
+
+		for _, name := range filteredDeps {
+			constraint := deps[name]
+
+			isLast := i == count-1
+			connector := "├──"
+			if isLast {
+				connector = "└──"
+			}
+
+			// Get resolved version
+			version := constraint
+			var subDeps map[string]string
+			if pkg, ok := pkgMap[name]; ok {
+				version = pkg.Version
+				subDeps = pkg.Require
+			}
+
+			fmt.Printf("%s%s %s (%s)\n", prefix, connector, name, version)
+
+			if len(subDeps) > 0 {
+				// Avoid cycles
+				if !visited[name] {
+					newVisited := make(map[string]bool)
+					for k, v := range visited {
+						newVisited[k] = v
+					}
+					newVisited[name] = true
+
+					newPrefix := prefix + "│   "
+					if isLast {
+						newPrefix = prefix + "    "
+					}
+					printDeps(subDeps, newPrefix, newVisited)
+				}
+			}
+			i++
+		}
+	}
+
+	printDeps(pkgJson.Require, "", make(map[string]bool))
+
 	return nil
 }
