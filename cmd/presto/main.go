@@ -14,6 +14,7 @@ import (
 )
 
 var version = "0.1.0"
+var verbose bool
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -24,6 +25,9 @@ func main() {
 
 	rootCmd.Version = version
 	rootCmd.SetVersionTemplate("🎵 Presto v{{.Version}}\n")
+
+	// Add global flags
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 
 	// Install command
 	installCmd := &cobra.Command{
@@ -145,7 +149,15 @@ func main() {
 	}
 }
 
+// logVerbose prints message only if verbose flag is set
+func logVerbose(format string, args ...interface{}) {
+	if verbose {
+		fmt.Printf("🔍 [VERBOSE] "+format+"\n", args...)
+	}
+}
+
 func runInstall() error {
+
 	fmt.Println("🎵 Presto Install")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
@@ -163,6 +175,8 @@ func runInstall() error {
 
 	// Resolve dependencies
 	fmt.Println("🔍 Resolving dependencies...")
+	logVerbose("Starting dependency resolution for %d required packages", len(composer.Require))
+
 	res := resolver.NewResolver(client)
 	packages, err := res.Resolve(composer)
 	if err != nil {
@@ -170,9 +184,15 @@ func runInstall() error {
 	}
 
 	fmt.Printf("✅ Resolved %d packages\n\n", len(packages))
+	logVerbose("Resolved packages: %d", len(packages))
+	for _, pkg := range packages {
+		logVerbose("  - %s (%s) -> %s", pkg.Name, pkg.Version, pkg.URL)
+	}
 
 	// Download packages
 	fmt.Println("⬇️  Downloading packages...")
+	logVerbose("Starting download with %d workers", 8)
+
 	dl := downloader.NewDownloader(8) // 8 parallel workers
 	if err := dl.DownloadAll(packages); err != nil {
 		return fmt.Errorf("download failed: %w", err)
@@ -180,6 +200,8 @@ func runInstall() error {
 
 	// Generate autoload
 	fmt.Println("\n📝 Generating autoload files...")
+	logVerbose("Generating PSR-4 autoload files")
+
 	gen := autoload.NewGenerator()
 	if err := gen.Generate(composer, packages); err != nil {
 		return fmt.Errorf("autoload generation failed: %w", err)
@@ -403,7 +425,14 @@ func runInit() error {
 
 func runCacheClear() error {
 	fmt.Println("🎵 Clearing cache...")
-	// TODO: Implement cache clearing
+
+	cacheDir := ".presto/cache"
+	if err := os.RemoveAll(cacheDir); err != nil {
+		return fmt.Errorf("failed to clear cache: %w", err)
+	}
+
+	logVerbose("Removed cache directory: %s", cacheDir)
+
 	fmt.Println("✅ Cache cleared")
 	return nil
 }
