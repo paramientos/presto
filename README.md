@@ -3,7 +3,7 @@
 **Lightning-Fast PHP Package Manager - A Composer Drop-in Replacement**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Version](https://img.shields.io/badge/version-v0.1.2-blue.svg)](https://github.com/aras/presto/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.3-blue.svg)](https://github.com/aras/presto/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/aras/presto/actions)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -145,6 +145,17 @@ $ presto audit
   CVE: CVE-2023-XXXXX
   Description: Security vulnerability in HTTP kernel
   Fix: Update to 5.4.31 or later
+```
+
+```bash
+$ presto tree
+📦 laravel/laravel
+├── php ^8.1
+├── laravel/framework ^10.0 (v10.34.2)
+│   ├── illuminate/support ^10.0 (v10.34.2)
+│   │   ├── doctrine/inflector ^2.0 (v2.0.8)
+│   │   └── ...
+└── ...
 ```
 
 ## 🔥 Killer Features
