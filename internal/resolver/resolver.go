@@ -250,7 +250,9 @@ func (r *Resolver) normalizeVersion(version string) string {
 func (r *Resolver) isPlatformPackage(name string) bool {
 	return strings.HasPrefix(name, "php") ||
 		strings.HasPrefix(name, "ext-") ||
-		strings.HasPrefix(name, "lib-")
+		strings.HasPrefix(name, "lib-") ||
+		name == "composer-plugin-api" ||
+		name == "composer-runtime-api"
 }
 
 // BuildDependencyTree builds a visual dependency tree for a package
