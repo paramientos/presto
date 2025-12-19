@@ -41,11 +41,24 @@ test:
 	@echo "🧪 Running tests..."
 	$(GOTEST) -v ./...
 
+# Run tests with coverage
+coverage:
+	@echo "📊 Running tests with coverage..."
+	$(GOTEST) -v -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Coverage report: coverage.html"
+
+# Run benchmarks
+benchmark:
+	@echo "⚡ Running benchmarks..."
+	@./scripts/benchmark.sh
+
 # Clean build artifacts
 clean:
 	@echo "🧹 Cleaning..."
 	@rm -rf $(BUILD_DIR)
 	@rm -rf vendor
+	@rm -f coverage.out coverage.html
 	@echo "✅ Clean complete"
 
 # Build for all platforms
@@ -90,6 +103,14 @@ lint:
 	@golangci-lint run
 	@echo "✅ Lint complete"
 
+# Release (create tag and push)
+release:
+	@echo "🚀 Creating release..."
+	@read -p "Enter version (e.g., v0.1.0): " version; \
+	git tag -a $$version -m "Release $$version"; \
+	git push origin $$version
+	@echo "✅ Release created! GitHub Actions will build binaries."
+
 # Show help
 help:
 	@echo "Presto Makefile Commands:"
@@ -97,9 +118,12 @@ help:
 	@echo "  make deps       - Install dependencies"
 	@echo "  make install    - Install Presto to system"
 	@echo "  make test       - Run tests"
+	@echo "  make coverage   - Run tests with coverage"
+	@echo "  make benchmark  - Run performance benchmarks"
 	@echo "  make clean      - Clean build artifacts"
 	@echo "  make build-all  - Build for all platforms"
 	@echo "  make run        - Build and run"
 	@echo "  make dev        - Development mode"
 	@echo "  make fmt        - Format code"
 	@echo "  make lint       - Lint code"
+	@echo "  make release    - Create a new release"

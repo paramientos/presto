@@ -361,7 +361,8 @@ func runWhyNot(packageName, version string) error {
 		return nil
 	}
 
-	fmt.Println("\n❌ Conflicts found:\n")
+	fmt.Println("\n❌ Conflicts found:")
+
 	for _, conflict := range conflicts {
 		fmt.Printf("  • %s\n", conflict)
 	}
