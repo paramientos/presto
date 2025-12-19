@@ -66,6 +66,13 @@ sudo make install
 
 ## 🎯 Usage
 
+### Global Options
+
+- `-v, --verbose`: Enable verbose output for debugging
+- `-h, --help`: Show help
+
+### Commands
+
 Presto uses the same commands as Composer:
 
 ```bash
