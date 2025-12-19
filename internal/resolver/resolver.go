@@ -210,11 +210,14 @@ func (r *Resolver) findLatestStable(info *packagist.PackageInfo) string {
 func (r *Resolver) normalizeConstraint(constraint string) string {
 	constraint = strings.TrimSpace(constraint)
 
+	// Remove all spaces around operators
+	constraint = strings.ReplaceAll(constraint, " ", "")
+
 	// Handle common Composer constraints
 	constraint = strings.ReplaceAll(constraint, "~", "~")
 	constraint = strings.ReplaceAll(constraint, "^", "^")
 
-	// Convert || to ,
+	// Convert || to , (OR operator for semver)
 	constraint = strings.ReplaceAll(constraint, "||", ",")
 
 	return constraint
