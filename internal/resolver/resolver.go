@@ -217,9 +217,6 @@ func (r *Resolver) normalizeConstraint(constraint string) string {
 	constraint = strings.ReplaceAll(constraint, "~", "~")
 	constraint = strings.ReplaceAll(constraint, "^", "^")
 
-	// Convert || to , (OR operator for semver)
-	constraint = strings.ReplaceAll(constraint, "||", ",")
-
 	return constraint
 }
 

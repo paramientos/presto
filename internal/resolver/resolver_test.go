@@ -20,7 +20,7 @@ func TestNormalizeConstraint(t *testing.T) {
 		{
 			name:     "OR constraint with spaces",
 			input:    "^1.9 || ^2.4",
-			expected: "^1.9,^2.4",
+			expected: "^1.9||^2.4",
 		},
 		{
 			name:     "Tilde constraint",
@@ -30,7 +30,7 @@ func TestNormalizeConstraint(t *testing.T) {
 		{
 			name:     "Complex OR with multiple spaces",
 			input:    "^1.0  ||  ^2.0  ||  ^3.0",
-			expected: "^1.0,^2.0,^3.0",
+			expected: "^1.0||^2.0||^3.0",
 		},
 	}
 
