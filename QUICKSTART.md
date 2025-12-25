@@ -9,7 +9,7 @@ Get up and running with Presto in 5 minutes!
 **macOS/Linux:**
 ```bash
 # Download latest release
-curl -L https://github.com/aras/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o presto
+curl -L https://github.com/paramientos/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o presto
 
 # Make executable
 chmod +x presto
@@ -22,13 +22,13 @@ presto --version
 ```
 
 **Windows:**
-Download from [Releases](https://github.com/aras/presto/releases) and add to PATH.
+Download from [Releases](https://github.com/paramientos/presto/releases) and add to PATH.
 
 ### Option 2: Build from Source
 
 ```bash
 # Clone repository
-git clone https://github.com/aras/presto.git
+git clone https://github.com/paramientos/presto.git
 cd presto
 
 # Install dependencies
@@ -259,7 +259,7 @@ Replace `composer install` with `presto install` in your CI:
 # .github/workflows/ci.yml
 - name: Install dependencies
   run: |
-    curl -L https://github.com/aras/presto/releases/latest/download/presto-linux-amd64 -o presto
+    curl -L https://github.com/paramientos/presto/releases/latest/download/presto-linux-amd64 -o presto
     chmod +x presto
     ./presto install
 ```
@@ -317,16 +317,16 @@ presto install
 
 ## Next Steps
 
-- Read the [full documentation](https://github.com/aras/presto)
-- Check out [examples](https://github.com/aras/presto/tree/main/examples)
-- Join the [community discussions](https://github.com/aras/presto/discussions)
-- Report issues on [GitHub](https://github.com/aras/presto/issues)
+- Read the [full documentation](https://github.com/paramientos/presto)
+- Check out [examples](https://github.com/paramientos/presto/tree/main/examples)
+- Join the [community discussions](https://github.com/paramientos/presto/discussions)
+- Report issues on [GitHub](https://github.com/paramientos/presto/issues)
 
 ## Getting Help
 
-- 📖 [Documentation](https://github.com/aras/presto)
-- 💬 [Discussions](https://github.com/aras/presto/discussions)
-- 🐛 [Issue Tracker](https://github.com/aras/presto/issues)
+- 📖 [Documentation](https://github.com/paramientos/presto)
+- 💬 [Discussions](https://github.com/paramientos/presto/discussions)
+- 🐛 [Issue Tracker](https://github.com/paramientos/presto/issues)
 - 📧 Email: presto@example.com
 
 ---

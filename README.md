@@ -3,9 +3,9 @@
 **Lightning-Fast PHP Package Manager - A Composer Drop-in Replacement**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Version](https://img.shields.io/badge/version-v0.1.3-blue.svg)](https://github.com/aras/presto/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.3-blue.svg)](https://github.com/paramientos/presto/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/aras/presto/actions)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/paramientos/presto/actions)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 > ⚠️ **BETA SOFTWARE**: Presto is currently in **BETA**. While it is functional and fast, it may still have bugs or incomplete features. Use with caution in production environments.
@@ -13,6 +13,17 @@
 > ⚡ **10x-20x faster** than Composer | 🔒 **Built-in security audit** | 🔍 **Dependency insights** | 💯 **100% compatible**
 
 Presto is a blazing-fast, drop-in replacement for Composer written in Go. It's 100% compatible with `composer.json` and `composer.lock` while being **10x-20x faster** thanks to parallel downloads and native binary execution.
+
+## 📥 Downloads
+
+| Platform | Architecture | Download |
+|----------|--------------|----------|
+| **Windows** | x86_64 | [presto-windows-amd64.exe](https://github.com/paramientos/presto/releases/latest/download/presto-windows-amd64.exe) |
+| **macOS** | Apple Silicon (M1/M2) | [presto-darwin-arm64](https://github.com/paramientos/presto/releases/latest/download/presto-darwin-arm64) |
+| **macOS** | Intel | [presto-darwin-amd64](https://github.com/paramientos/presto/releases/latest/download/presto-darwin-amd64) |
+| **Linux** | x86_64 | [presto-linux-amd64](https://github.com/paramientos/presto/releases/latest/download/presto-linux-amd64) |
+| **Linux** | ARM64 | [presto-linux-arm64](https://github.com/paramientos/presto/releases/latest/download/presto-linux-arm64) |
+
 
 ## ✨ Features
 
@@ -51,7 +62,7 @@ presto why-not package/name 2.0   # Why can't I install this?
 To build Presto from source:
 
 ```bash
-git clone https://github.com/aras/presto.git
+git clone https://github.com/paramientos/presto.git
 cd presto
 make build
 ```
@@ -204,9 +215,9 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## 🔗 Links
 
-- [GitHub](https://github.com/aras/presto)
-- [Issue Tracker](https://github.com/aras/presto/issues)
-- [Discussions](https://github.com/aras/presto/discussions)
+- [GitHub](https://github.com/paramientos/presto)
+- [Issue Tracker](https://github.com/paramientos/presto/issues)
+- [Discussions](https://github.com/paramientos/presto/discussions)
 
 ---
 

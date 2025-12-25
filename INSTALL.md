@@ -6,34 +6,27 @@ Multiple installation methods for different platforms and preferences.
 
 ## 🚀 Quick Install
 
-### macOS / Linux (Recommended)
+| Platform | Architecture | Download |
+|----------|--------------|----------|
+| **Windows** | x86_64 | [presto-windows-amd64.exe](https://github.com/paramientos/presto/releases/latest/download/presto-windows-amd64.exe) |
+| **macOS** | Apple Silicon (M1/M2) | [presto-darwin-arm64](https://github.com/paramientos/presto/releases/latest/download/presto-darwin-arm64) |
+| **macOS** | Intel | [presto-darwin-amd64](https://github.com/paramientos/presto/releases/latest/download/presto-darwin-amd64) |
+| **Linux** | x86_64 | [presto-linux-amd64](https://github.com/paramientos/presto/releases/latest/download/presto-linux-amd64) |
+| **Linux** | ARM64 | [presto-linux-arm64](https://github.com/paramientos/presto/releases/latest/download/presto-linux-arm64) |
+
+### macOS / Linux (One-liner)
 
 ```bash
-# Download latest release
-curl -L https://github.com/aras/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o presto
-
-# Make executable
-chmod +x presto
-
-# Move to PATH
-sudo mv presto /usr/local/bin/
-
-# Verify installation
-presto --version
+curl -L https://github.com/paramientos/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') -o presto && chmod +x presto && sudo mv presto /usr/local/bin/
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-# Download latest release
-Invoke-WebRequest -Uri "https://github.com/aras/presto/releases/latest/download/presto-windows-amd64.exe" -OutFile "presto.exe"
-
-# Move to a directory in PATH (e.g., C:\Windows\System32)
+Invoke-WebRequest -Uri "https://github.com/paramientos/presto/releases/latest/download/presto-windows-amd64.exe" -OutFile "presto.exe"
 Move-Item presto.exe C:\Windows\System32\
-
-# Verify installation
-presto --version
 ```
+
 
 ---
 
@@ -43,7 +36,7 @@ presto --version
 
 ```bash
 # Coming soon!
-brew tap aras/presto
+brew tap paramientos/presto
 brew install presto
 ```
 
@@ -75,7 +68,7 @@ choco install presto
 
 ```bash
 # Clone repository
-git clone https://github.com/aras/presto.git
+git clone https://github.com/paramientos/presto.git
 cd presto
 
 # Install dependencies
@@ -95,7 +88,7 @@ presto --version
 
 ```bash
 # Clone repository
-git clone https://github.com/aras/presto.git
+git clone https://github.com/paramientos/presto.git
 cd presto
 
 # Install dependencies
@@ -117,8 +110,8 @@ presto --version
 
 ```bash
 # Coming soon!
-docker pull aras/presto:latest
-docker run --rm -v $(pwd):/app aras/presto install
+docker pull paramientos/presto:latest
+docker run --rm -v $(pwd):/app paramientos/presto install
 ```
 
 ---
@@ -193,7 +186,7 @@ presto init
 
 ```bash
 # Download latest version
-curl -L https://github.com/aras/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o presto
+curl -L https://github.com/paramientos/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o presto
 chmod +x presto
 sudo mv presto /usr/local/bin/
 ```
@@ -267,8 +260,8 @@ After installation:
 
 1. Read the [Quick Start Guide](QUICKSTART.md)
 2. Check out [Examples](examples/)
-3. Join the [Community](https://github.com/aras/presto/discussions)
+3. Join the [Community](https://github.com/paramientos/presto/discussions)
 
 ---
 
-**Need help?** [Open an issue](https://github.com/aras/presto/issues) or check the [documentation](README.md).
+**Need help?** [Open an issue](https://github.com/paramientos/presto/issues) or check the [documentation](README.md).
