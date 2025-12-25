@@ -27,7 +27,7 @@ iwr -useb https://raw.githubusercontent.com/paramientos/presto/main/scripts/inst
 ```
 
 
-## 📥 Downloads
+## 📥 Or Manual Downloads
 
 | Platform | Architecture | Download |
 |----------|--------------|----------|
