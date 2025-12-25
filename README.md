@@ -16,15 +16,16 @@ Presto is a blazing-fast, drop-in replacement for Composer written in Go. It's 1
 
 ## 📥 Installation
 
-### macOS / Linux (One-liner)
+### macOS / Linux
 ```bash
-curl -L https://github.com/paramientos/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') -o presto && chmod +x presto && sudo mv presto /usr/local/bin/
+curl -fsSL https://raw.githubusercontent.com/paramientos/presto/main/scripts/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 ```powershell
-powershell -Command "iwr -useb https://raw.githubusercontent.com/paramientos/presto/main/scripts/install.ps1 | iex"
+iwr -useb https://raw.githubusercontent.com/paramientos/presto/main/scripts/install.ps1 | iex
 ```
+
 
 ## 📥 Downloads
 
