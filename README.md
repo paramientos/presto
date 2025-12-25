@@ -14,6 +14,18 @@
 
 Presto is a blazing-fast, drop-in replacement for Composer written in Go. It's 100% compatible with `composer.json` and `composer.lock` while being **10x-20x faster** thanks to parallel downloads and native binary execution.
 
+## 📥 Installation
+
+### macOS / Linux (One-liner)
+```bash
+curl -L https://github.com/paramientos/presto/releases/latest/download/presto-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') -o presto && chmod +x presto && sudo mv presto /usr/local/bin/
+```
+
+### Windows (PowerShell)
+```powershell
+powershell -Command "iwr -useb https://raw.githubusercontent.com/paramientos/presto/main/scripts/install.ps1 | iex"
+```
+
 ## 📥 Downloads
 
 | Platform | Architecture | Download |
