@@ -69,7 +69,7 @@ func (d *Downloader) DownloadAll(packages []*resolver.Package) error {
 				if err := d.downloadPackage(pkg); err != nil {
 					errors <- fmt.Errorf("failed to download %s: %w", pkg.Name, err)
 				} else {
-					bar.Add(1)
+					_ = bar.Add(1)
 				}
 			}
 		}()
@@ -95,7 +95,7 @@ func (d *Downloader) DownloadAll(packages []*resolver.Package) error {
 		return fmt.Errorf("download errors: %v", downloadErrors)
 	}
 
-	bar.Finish()
+	_ = bar.Finish()
 	fmt.Println()
 
 	return nil
@@ -168,7 +168,7 @@ func (d *Downloader) extractZip(zipPath, destDir string) error {
 
 		// Check for directory
 		if file.FileInfo().IsDir() {
-			os.MkdirAll(path, file.Mode())
+			_ = os.MkdirAll(path, file.Mode())
 			continue
 		}
 

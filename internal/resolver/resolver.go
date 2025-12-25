@@ -310,13 +310,13 @@ func (r *Resolver) BuildDependencyTree(composer *parser.ComposerJSON, targetPack
 
 	// Check if directly required
 	if version, ok := composer.Require[targetPackage]; ok {
-		tree.WriteString(fmt.Sprintf("Your project\n"))
+		tree.WriteString("Your project\n")
 		tree.WriteString(fmt.Sprintf("  └─ %s (%s)\n", targetPackage, version))
 		return tree.String(), nil
 	}
 
 	// Search in dependencies
-	tree.WriteString(fmt.Sprintf("Your project\n"))
+	tree.WriteString("Your project\n")
 	found := r.searchInDependencies(composer, targetPackage, &tree, "  ", composer.Require)
 
 	if !found {

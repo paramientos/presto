@@ -162,9 +162,7 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 		if len(v.Require) > 0 && string(v.Require) != "null" {
 
 			// Try to unmarshal as map, ignore errors if it's an array (empty requirements)
-			if err := json.Unmarshal(v.Require, &require); err != nil {
-				// fmt.Printf("DEBUG: Require parse error for %s %s: %v\n", name, v.Version, err)
-			}
+			_ = json.Unmarshal(v.Require, &require)
 		}
 
 		versionMap[v.Version] = &VersionInfo{
