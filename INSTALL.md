@@ -169,7 +169,7 @@ presto completion powershell >> $PROFILE
 ```bash
 # Check version
 presto --version
-# Output: 🎵 Presto v0.1.5
+# Output: 🎵 Presto v0.1.6
 
 # Check help
 presto --help

@@ -133,6 +133,9 @@ func (d *Downloader) downloadPackage(pkg *resolver.Package) error {
 		return fmt.Errorf("download failed: %w", err)
 	}
 
+	// Close file to ensure everything is flushed to disk before extraction
+	tmpFile.Close()
+
 	// Extract archive
 	if err := d.extractZip(tmpFile.Name(), packageDir); err != nil {
 		return fmt.Errorf("extraction failed: %w", err)

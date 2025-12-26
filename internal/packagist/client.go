@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Masterminds/semver/v3"
 )
 
 const (
@@ -218,31 +220,50 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 // findLatestStable finds the latest stable version
 func (c *Client) findLatestStable(versions map[string]*VersionInfo) string {
 	var latest string
+	var latestVer *semver.Version
 
-	for version := range versions {
+	for vStr, _ := range versions {
 		// Skip dev versions
-		if strings.Contains(version, "dev") {
+		if strings.Contains(vStr, "dev") {
 			continue
 		}
 
-		// Prefer versions without suffixes
-		if latest == "" {
-			latest = version
+		// Parse version
+		v, err := semver.NewVersion(vStr)
+		if err != nil {
+			// If not a valid semver, try a simple comparison as fallback
+			if latest == "" || vStr > latest {
+				// Only if it doesn't look like a pre-release
+				if !strings.Contains(vStr, "alpha") &&
+					!strings.Contains(vStr, "beta") &&
+					!strings.Contains(vStr, "RC") {
+					latest = vStr
+				}
+			}
 			continue
 		}
 
-		// Simple comparison - prefer higher versions
-		if !strings.Contains(version, "alpha") &&
-			!strings.Contains(version, "beta") &&
-			!strings.Contains(version, "RC") {
-			latest = version
+		// Skip pre-releases for "latest stable"
+		if v.Prerelease() != "" {
+			continue
+		}
+
+		if latestVer == nil || v.GreaterThan(latestVer) {
+			latestVer = v
+			latest = vStr
 		}
 	}
 
-	// If no stable found, return any version
+	// If no stable found, return any version (prefer non-dev)
 	if latest == "" {
-		for version := range versions {
-			return version
+		for vStr := range versions {
+			if !strings.Contains(vStr, "dev") {
+				return vStr
+			}
+		}
+		// Final fallback: just return any
+		for vStr := range versions {
+			return vStr
 		}
 	}
 
@@ -316,8 +337,33 @@ func (c *Client) DownloadPackage(name, version string) (string, error) {
 		return versionInfo.Dist.URL, nil
 	}
 
+	// Fallback to source if dist is missing
 	if versionInfo.Source.URL != "" {
-		return versionInfo.Source.URL, nil
+		url := versionInfo.Source.URL
+		ref := versionInfo.Source.Reference
+
+		// If it's a Git URL, try to convert it to a ZIP download URL
+		// as our downloader only supports ZIPs for now.
+		if versionInfo.Source.Type == "git" {
+			// GitHub: https://github.com/user/repo -> https://github.com/user/repo/archive/{ref}.zip
+			if strings.Contains(url, "github.com") {
+				repoURL := strings.TrimSuffix(url, ".git")
+				return fmt.Sprintf("%s/archive/%s.zip", repoURL, ref), nil
+			}
+			// Codeberg: https://codeberg.org/user/repo -> https://codeberg.org/user/repo/archive/{ref}.zip
+			if strings.Contains(url, "codeberg.org") {
+				repoURL := strings.TrimSuffix(url, ".git")
+				return fmt.Sprintf("%s/archive/%s.zip", repoURL, ref), nil
+			}
+			// GitLab: https://gitlab.com/user/repo -> https://gitlab.com/user/repo/-/archive/{ref}/repo-{ref}.zip
+			if strings.Contains(url, "gitlab.com") {
+				repoURL := strings.TrimSuffix(url, ".git")
+				// Simple fallback for GitLab
+				return fmt.Sprintf("%s/-/archive/%s/archive.zip", repoURL, ref), nil
+			}
+		}
+
+		return url, nil
 	}
 
 	return "", fmt.Errorf("no download URL found for %s@%s", name, version)

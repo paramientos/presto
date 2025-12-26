@@ -126,9 +126,14 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 	}
 
 	// Get download URL
-	downloadURL := versionInfo.Dist.URL
-	if downloadURL == "" && versionInfo.Source.URL != "" {
-		downloadURL = versionInfo.Source.URL
+	downloadURL, err := r.client.DownloadPackage(name, version)
+	if err != nil {
+		// If it's a critical error (like package not found), return it.
+		// If it just doesn't have a URL, it might be a meta-package.
+		if !strings.Contains(err.Error(), "no download URL found") {
+			return err
+		}
+		downloadURL = ""
 	}
 
 	// Skip packages without download URL (usually meta-packages or platform packages)

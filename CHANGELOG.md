@@ -5,6 +5,13 @@ All notable changes to Presto will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2025-12-26
+
+### Fixed
+- 🚀 Fixed incorrect latest version selection (was picking random stable versions instead of highest).
+- 📦 Added fallback for packages without `dist` URLs (e.g. GitHub/Codeberg/GitLab Git source URLs are now converted to ZIP downloads).
+- 🔧 Fixed a race condition/sync issue in downloader where temp files were not fully flushed before extraction.
+
 ## [0.1.5] - 2025-12-26
 
 ### Fixed
@@ -79,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.6]: https://github.com/paramientos/presto/releases/tag/v0.1.6
 [0.1.5]: https://github.com/paramientos/presto/releases/tag/v0.1.5
 [0.1.4]: https://github.com/paramientos/presto/releases/tag/v0.1.4
 [0.1.0]: https://github.com/paramientos/presto/releases/tag/v0.1.0
