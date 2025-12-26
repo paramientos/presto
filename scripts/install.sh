@@ -18,7 +18,7 @@ case "${ARCH}" in
 esac
 
 # Construct download URL
-TAG=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+TAG=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": "\([^"]*\)".*/\1/')
 if [ -z "$TAG" ]; then
     TAG="latest"
 fi
