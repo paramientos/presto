@@ -5,6 +5,17 @@ All notable changes to Presto will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2025-12-26
+
+### Fixed
+- 🐛 Fix unmarshal error when fetching packages with `dist: null` or `dist: "__unset"` from Packagist p2 API. (Thanks to [@lwohlhart](https://github.com/lwohlhart))
+
+## [0.1.4] - 2025-12-25
+
+### Fixed
+- Improved Tesseract OCR stability in GitHub Actions.
+- Fixed permission issues in CI pipeline.
+
 ## [0.1.0] - 2025-12-19
 
 ### Added
@@ -68,4 +79,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[0.1.0]: https://github.com/aras/presto/releases/tag/v0.1.0
+[0.1.5]: https://github.com/paramientos/presto/releases/tag/v0.1.5
+[0.1.4]: https://github.com/paramientos/presto/releases/tag/v0.1.4
+[0.1.0]: https://github.com/paramientos/presto/releases/tag/v0.1.0

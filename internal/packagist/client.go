@@ -58,11 +58,29 @@ type DistInfo struct {
 	Shasum    string `json:"shasum"`
 }
 
+// UnmarshalJSON handles "__unset" strings from Packagist API
+func (d *DistInfo) UnmarshalJSON(data []byte) error {
+	if string(data) == "\"__unset\"" || string(data) == "null" {
+		return nil
+	}
+	type Alias DistInfo
+	return json.Unmarshal(data, (*Alias)(d))
+}
+
 // SourceInfo represents source repository information
 type SourceInfo struct {
 	Type      string `json:"type"`
 	URL       string `json:"url"`
 	Reference string `json:"reference"`
+}
+
+// UnmarshalJSON handles "__unset" strings from Packagist API
+func (s *SourceInfo) UnmarshalJSON(data []byte) error {
+	if string(data) == "\"__unset\"" || string(data) == "null" {
+		return nil
+	}
+	type Alias SourceInfo
+	return json.Unmarshal(data, (*Alias)(s))
 }
 
 // PackagistResponse represents the API v2 response
