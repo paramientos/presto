@@ -3,7 +3,7 @@
 **Lightning-Fast PHP Package Manager - A Composer Drop-in Replacement**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Version](https://img.shields.io/badge/version-v0.1.6-blue.svg)](https://github.com/paramientos/presto/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.7-blue.svg)](https://github.com/paramientos/presto/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/paramientos/presto/actions)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
