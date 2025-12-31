@@ -34,3 +34,5 @@ Thumbs.db
 
 # Composer
 composer.lock
+
+#when push the code to the github, it will make CI & CD pipeline to build the project and make executable files

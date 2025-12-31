@@ -65,6 +65,30 @@ func (r *Resolver) Resolve(composer *parser.ComposerJSON) ([]*Package, error) {
 	return packages, nil
 }
 
+// ResolveFromLock returns packages from a lock file
+func (r *Resolver) ResolveFromLock(lock *parser.ComposerLock) ([]*Package, error) {
+	var packages []*Package
+
+	// Combine production and dev packages from lock file
+	allLocked := append(lock.Packages, lock.PackagesDev...)
+
+	for _, lp := range allLocked {
+		// Convert AutoloadConfig to json.RawMessage
+		autoloadJSON, _ := json.Marshal(lp.Autoload)
+
+		pkg := &Package{
+			Name:     lp.Name,
+			Version:  lp.Version,
+			URL:      lp.Dist.URL,
+			Require:  lp.Require,
+			Autoload: autoloadJSON,
+		}
+		packages = append(packages, pkg)
+	}
+
+	return packages, nil
+}
+
 // resolveDependency resolves a single dependency recursively
 func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Package) error {
 	// Check if already resolved

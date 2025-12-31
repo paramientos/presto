@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "0.1.7"
+var version = "0.1.9"
 var verbose bool
 
 func main() {
@@ -30,19 +30,16 @@ func main() {
 	rootCmd.Version = version
 	rootCmd.SetVersionTemplate("🎵 Presto v{{.Version}}\n")
 
-	// Add global flags
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 
-	// Install command
 	installCmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install dependencies from composer.json",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInstall()
+			return runInstall(false)
 		},
 	}
 
-	// Require command
 	requireCmd := &cobra.Command{
 		Use:   "require [packages...]",
 		Short: "Add new packages to composer.json",
@@ -52,7 +49,6 @@ func main() {
 		},
 	}
 
-	// Update command
 	updateCmd := &cobra.Command{
 		Use:   "update [packages...]",
 		Short: "Update dependencies to latest versions",
@@ -61,7 +57,6 @@ func main() {
 		},
 	}
 
-	// Remove command
 	removeCmd := &cobra.Command{
 		Use:   "remove [packages...]",
 		Short: "Remove packages from composer.json",
@@ -71,7 +66,6 @@ func main() {
 		},
 	}
 
-	// Show command
 	showCmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show installed packages",
@@ -80,7 +74,6 @@ func main() {
 		},
 	}
 
-	// Audit command (killer feature!)
 	auditCmd := &cobra.Command{
 		Use:   "audit",
 		Short: "🔒 Scan for security vulnerabilities",
@@ -89,7 +82,6 @@ func main() {
 		},
 	}
 
-	// Why command (killer feature!)
 	whyCmd := &cobra.Command{
 		Use:   "why [package]",
 		Short: "🔍 Show why a package is installed",
@@ -99,7 +91,6 @@ func main() {
 		},
 	}
 
-	// Why-not command (killer feature!)
 	whyNotCmd := &cobra.Command{
 		Use:   "why-not [package] [version]",
 		Short: "🚫 Show why a package version cannot be installed",
@@ -109,7 +100,6 @@ func main() {
 		},
 	}
 
-	// Init command
 	initCmd := &cobra.Command{
 		Use:   "init",
 		Short: "Create a new composer.json file",
@@ -118,7 +108,16 @@ func main() {
 		},
 	}
 
-	// Tree command
+	var strictValidate bool
+	validateCmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Checks if composer.json is valid",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runValidate(strictValidate)
+		},
+	}
+	validateCmd.Flags().BoolVar(&strictValidate, "strict", false, "Failure on warnings")
+
 	treeCmd := &cobra.Command{
 		Use:     "tree",
 		Short:   "🌳 Show dependency tree",
@@ -128,7 +127,6 @@ func main() {
 		},
 	}
 
-	// Cache command
 	cacheCmd := &cobra.Command{
 		Use:   "cache",
 		Short: "Manage package cache",
@@ -155,6 +153,7 @@ func main() {
 		whyNotCmd,
 		initCmd,
 		treeCmd,
+		validateCmd,
 		cacheCmd,
 	)
 
@@ -164,19 +163,17 @@ func main() {
 	}
 }
 
-// logVerbose prints message only if verbose flag is set
 func logVerbose(format string, args ...interface{}) {
 	if verbose {
 		fmt.Printf("🔍 [VERBOSE] "+format+"\n", args...)
 	}
 }
 
-func runInstall() error {
+func runInstall(forceResolve bool) error {
 
 	fmt.Println("🎵 Presto Install")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-	// Parse composer.json
 	composer, err := parser.ParseComposerJSON("composer.json")
 	if err != nil {
 		return fmt.Errorf("failed to parse composer.json: %w", err)
@@ -185,17 +182,40 @@ func runInstall() error {
 	fmt.Printf("📦 Project: %s\n", composer.Name)
 	fmt.Printf("📝 Description: %s\n\n", composer.Description)
 
-	// Create Packagist client
 	client := packagist.NewClient()
-
-	// Resolve dependencies
-	fmt.Println("🔍 Resolving dependencies...")
-	logVerbose("Starting dependency resolution for %d required packages", len(composer.Require))
-
 	res := resolver.NewResolver(client)
-	packages, err := res.Resolve(composer)
-	if err != nil {
-		return fmt.Errorf("dependency resolution failed: %w", err)
+	var packages []*resolver.Package
+
+	if !forceResolve {
+		if _, err := os.Stat("composer.lock"); err == nil {
+			fmt.Println("🔒 Installing from composer.lock")
+			lock, err := parser.ParseComposerLock("composer.lock")
+			if err == nil {
+				lockGen := lockfile.NewGenerator()
+				currentHash := lockGen.GenerateContentHash(composer)
+
+				if lock.ContentHash != currentHash {
+					fmt.Println("⚠️  Warning: composer.lock is out of date with composer.json. Re-resolving...")
+				} else {
+					packages, err = res.ResolveFromLock(lock)
+					if err != nil {
+						return fmt.Errorf("failed to resolve from lock file: %w", err)
+					}
+				}
+			} else {
+				fmt.Printf("⚠️  Failed to parse composer.lock: %v. Falling back to composer.json\n", err)
+			}
+		}
+	}
+
+	if len(packages) == 0 {
+		fmt.Println("🔍 Resolving dependencies...")
+		logVerbose("Starting dependency resolution for %d required packages", len(composer.Require))
+		packages, err = res.Resolve(composer)
+
+		if err != nil {
+			return fmt.Errorf("dependency resolution failed: %w", err)
+		}
 	}
 
 	fmt.Printf("✅ Resolved %d packages\n\n", len(packages))
@@ -204,7 +224,6 @@ func runInstall() error {
 		logVerbose("  - %s (%s) -> %s", pkg.Name, pkg.Version, pkg.URL)
 	}
 
-	// Download packages
 	fmt.Println("⬇️  Downloading packages...")
 	logVerbose("Starting download with %d workers", 8)
 
@@ -213,7 +232,6 @@ func runInstall() error {
 		return fmt.Errorf("download failed: %w", err)
 	}
 
-	// Update autoload from downloaded packages (source of truth)
 	fmt.Println("🔄 Updating package information...")
 	for _, pkg := range packages {
 		jsonPath := filepath.Join("vendor", pkg.Name, "composer.json")
@@ -232,7 +250,6 @@ func runInstall() error {
 		}
 	}
 
-	// Generate autoload
 	fmt.Println("\n📝 Generating autoload files...")
 	logVerbose("Generating PSR-4 autoload files")
 
@@ -241,7 +258,6 @@ func runInstall() error {
 		return fmt.Errorf("autoload generation failed: %w", err)
 	}
 
-	// Generate composer.lock
 	fmt.Println("🔒 Generating composer.lock...")
 	logVerbose("Generating lock file")
 
@@ -271,7 +287,6 @@ func runRequire(packages []string) error {
 			return fmt.Errorf("package %s not found: %w", pkg, err)
 		}
 
-		// Add to composer.json
 		if composer.Require == nil {
 			composer.Require = make(map[string]string)
 		}
@@ -280,13 +295,11 @@ func runRequire(packages []string) error {
 		fmt.Printf("✅ Added %s: %s\n", pkg, info.LatestVersion)
 	}
 
-	// Save composer.json
 	if err := parser.WriteComposerJSON("composer.json", composer); err != nil {
 		return err
 	}
 
-	// Run install
-	return runInstall()
+	return runInstall(true)
 }
 
 func runUpdate(packages []string) error {
@@ -298,8 +311,7 @@ func runUpdate(packages []string) error {
 		fmt.Printf("📦 Updating: %v\n", packages)
 	}
 
-	// Re-run install to update
-	return runInstall()
+	return runInstall(true)
 }
 
 func runRemove(packages []string) error {
@@ -383,14 +395,12 @@ func runWhy(packageName string) error {
 		return err
 	}
 
-	// Check if directly required
 	if version, ok := composer.Require[packageName]; ok {
 		fmt.Printf("\n✅ Directly required in composer.json\n")
 		fmt.Printf("   Version: %s\n", version)
 		return nil
 	}
 
-	// Check dependencies (simplified)
 	client := packagist.NewClient()
 	res := resolver.NewResolver(client)
 	tree, err := res.BuildDependencyTree(composer, packageName)
@@ -483,13 +493,11 @@ func runCacheClear() error {
 func runTree() error {
 	fmt.Println("🌳 Generating dependency map...")
 
-	// 1. Parse composer.json
 	pkgJson, err := parser.ParseComposerJSON("composer.json")
 	if err != nil {
 		return fmt.Errorf("failed to parse composer.json: %w", err)
 	}
 
-	// 2. Resolve packages (to get the graph)
 	client := packagist.NewClient()
 	res := resolver.NewResolver(client)
 
@@ -499,7 +507,6 @@ func runTree() error {
 		return fmt.Errorf("failed to resolve dependencies: %w", err)
 	}
 
-	// Map packages for quick lookup
 	pkgMap := make(map[string]*resolver.Package)
 	for _, pkg := range packages {
 		pkgMap[pkg.Name] = pkg
@@ -507,20 +514,20 @@ func runTree() error {
 
 	fmt.Printf("\n📦 %s\n", pkgJson.Name)
 
-	// Traverse
 	var printDeps func(deps map[string]string, prefix string, visited map[string]bool)
 	printDeps = func(deps map[string]string, prefix string, visited map[string]bool) {
 		i := 0
 		count := len(deps)
 
-		// Filter out platform packages from count to properly draw connectors
 		filteredDeps := make([]string, 0, count)
 		for name := range deps {
 			if name == "php" || strings.HasPrefix(name, "ext-") || strings.HasSuffix(name, "-implementation") {
 				continue
 			}
+
 			filteredDeps = append(filteredDeps, name)
 		}
+
 		count = len(filteredDeps)
 
 		for _, name := range filteredDeps {
@@ -528,11 +535,11 @@ func runTree() error {
 
 			isLast := i == count-1
 			connector := "├──"
+
 			if isLast {
 				connector = "└──"
 			}
 
-			// Get resolved version
 			version := constraint
 			var subDeps map[string]string
 			if pkg, ok := pkgMap[name]; ok {
@@ -543,7 +550,6 @@ func runTree() error {
 			fmt.Printf("%s%s %s (%s)\n", prefix, connector, name, version)
 
 			if len(subDeps) > 0 {
-				// Avoid cycles
 				if !visited[name] {
 					newVisited := make(map[string]bool)
 					for k, v := range visited {
@@ -564,5 +570,43 @@ func runTree() error {
 
 	printDeps(pkgJson.Require, "", make(map[string]bool))
 
+	return nil
+}
+func runValidate(strict bool) error {
+	fmt.Println("🎵 Validating composer.json")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	path := "composer.json"
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("composer.json not found in current directory")
+	}
+
+	composer, err := parser.ParseComposerJSON(path)
+	if err != nil {
+		fmt.Printf("❌ Invalid JSON: %v\n", err)
+		return fmt.Errorf("validation failed")
+	}
+
+	res := parser.Validate(composer)
+
+	for _, warn := range res.Warnings {
+		fmt.Printf("⚠️  %s\n", warn)
+	}
+
+	for _, err := range res.Errors {
+		fmt.Printf("❌ %s\n", err)
+	}
+
+	if !res.IsValid(strict) {
+		fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		if len(res.Errors) > 0 {
+			fmt.Printf("🚫 Validation failed with %d errors\n", len(res.Errors))
+		} else if strict && len(res.Warnings) > 0 {
+			fmt.Printf("🚫 Validation failed with %d warnings (strict mode)\n", len(res.Warnings))
+		}
+		os.Exit(1)
+	}
+
+	fmt.Println("\n✅ composer.json is valid!")
 	return nil
 }
