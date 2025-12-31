@@ -36,3 +36,9 @@ Thumbs.db
 composer.lock
 
 #when push the code to the github, it will make CI & CD pipeline to build the project and make executable files
+
+git add . 
+git commit -m "" 
+git tag -a v0.1.9 -m "Release v0.1.9" 
+git push origin main 
+git push origin v0.1.9
