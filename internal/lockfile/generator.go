@@ -10,15 +10,12 @@ import (
 	"github.com/aras/presto/internal/resolver"
 )
 
-// Generator generates composer.lock files
 type Generator struct{}
 
-// NewGenerator creates a new lock file generator
 func NewGenerator() *Generator {
 	return &Generator{}
 }
 
-// Generate creates a composer.lock file from resolved packages
 func (g *Generator) Generate(composer *parser.ComposerJSON, packages []*resolver.Package) error {
 	lock := &parser.ComposerLock{
 		Readme: []string{
@@ -33,7 +30,6 @@ func (g *Generator) Generate(composer *parser.ComposerJSON, packages []*resolver
 		PreferStable: true,
 	}
 
-	// Add platform requirements
 	if composer.Require != nil {
 		lock.Platform = make(map[string]string)
 		for name, version := range composer.Require {
@@ -46,15 +42,12 @@ func (g *Generator) Generate(composer *parser.ComposerJSON, packages []*resolver
 	return parser.WriteComposerLock("composer.lock", lock)
 }
 
-// GenerateContentHash generates MD5 hash of composer.json content
 func (g *Generator) GenerateContentHash(composer *parser.ComposerJSON) string {
-	// Simplified hash - in production, should hash normalized composer.json
 	data, _ := json.Marshal(composer)
 	hash := md5.Sum(data)
 	return fmt.Sprintf("%x", hash)
 }
 
-// convertToLockedPackages converts resolver packages to locked packages
 func (g *Generator) convertToLockedPackages(packages []*resolver.Package, devOnly bool) []parser.LockedPackage {
 	var locked []parser.LockedPackage
 
