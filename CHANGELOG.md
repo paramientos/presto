@@ -5,6 +5,30 @@ All notable changes to Presto will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-01-01
+
+### Added
+- 🚀 **Composer Scripts Support** - Added execution of lifecycle hooks and custom scripts:
+  - `pre-install-cmd`, `post-install-cmd`
+  - `pre-update-cmd`, `post-update-cmd`
+  - `pre-autoload-dump`, `post-autoload-dump`
+- 🛠️ **`presto run` command** - Manually execute scripts defined in `composer.json`.
+- 🧩 **Advanced Script Handling** - Support for `@php` shortcuts, PHP class method calls, and script references.
+- 📦 **Vendor Bin to PATH** - Automatically adds `./vendor/bin` to `PATH` during script execution.
+
+## [0.1.9] - 2025-12-31
+
+### Added
+- ✅ **`presto validate` command** - Checks if `composer.json` is valid.
+- ⚙️ Added `--strict` mode to validation for error on warnings.
+- 🔒 Enhanced `composer.lock` integration and hash validation.
+
+## [0.1.8] - 2025-12-31
+
+### Added
+- 🌳 **`presto tree` command** - Visualize dependency tree.
+- 🗑️ **`presto cache clear` command** - Manage local package cache.
+
 ## [0.1.7] - 2025-12-27
 
 ### Enhanced
@@ -97,6 +121,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.10]: https://github.com/paramientos/presto/releases/tag/v0.1.10
+[0.1.9]: https://github.com/paramientos/presto/releases/tag/v0.1.9
+[0.1.8]: https://github.com/paramientos/presto/releases/tag/v0.1.8
 [0.1.7]: https://github.com/paramientos/presto/releases/tag/v0.1.7
 [0.1.6]: https://github.com/paramientos/presto/releases/tag/v0.1.6
 [0.1.5]: https://github.com/paramientos/presto/releases/tag/v0.1.5

@@ -75,11 +75,11 @@
 ## 🎯 This Month
 
 ### Core Features
-- [ ] **Composer Scripts**
-  - [ ] Parse scripts from composer.json
-  - [ ] Execute pre/post install hooks
-  - [ ] Support custom scripts
-  - [ ] Handle script failures
+- [x] **Composer Scripts**
+  - [x] Parse scripts from composer.json
+  - [x] Execute pre/post install hooks
+  - [x] Support custom scripts
+  - [x] Handle script failures
 
 - [ ] **Update Command**
   - [ ] Update all packages
@@ -186,7 +186,7 @@
 
 ### Limitations
 - [ ] No plugin support yet
-- [ ] No script execution
+- [x] Script execution support
 - [ ] No custom repositories
 - [ ] No global installation
 

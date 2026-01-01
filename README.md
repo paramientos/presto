@@ -3,7 +3,7 @@
 **Lightning-Fast PHP Package Manager - A Composer Drop-in Replacement**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Version](https://img.shields.io/badge/version-v0.1.9-blue.svg)](https://github.com/paramientos/presto/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.10-blue.svg)](https://github.com/paramientos/presto/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/paramientos/presto/actions)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -68,8 +68,8 @@ presto why-not package/name 2.0   # Why can't I install this?
 - Reads `composer.json` and `composer.lock`
 - Works with Packagist.org
 - PSR-4/PSR-0 autoloading
-- **Strict Validation** (Added in v0.1.9)
-- Composer scripts support
+- **Strict Validation** (v0.1.9+)
+- **Composer Scripts** (Added in v0.1.10)
 
 ## 🛠️ Building
 
@@ -124,6 +124,9 @@ presto init
 # Validate composer.json (v0.1.9+)
 presto validate
 presto validate --strict
+
+# Run custom scripts (v0.1.10+)
+presto run post-install-cmd
 
 # Clear cache
 presto cache clear

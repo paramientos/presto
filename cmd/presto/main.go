@@ -13,11 +13,12 @@ import (
 	"github.com/aras/presto/internal/packagist"
 	"github.com/aras/presto/internal/parser"
 	"github.com/aras/presto/internal/resolver"
+	"github.com/aras/presto/internal/scripts"
 	"github.com/aras/presto/internal/security"
 	"github.com/spf13/cobra"
 )
 
-var version = "0.1.9"
+var version = "0.1.10"
 var verbose bool
 
 func main() {
@@ -142,6 +143,16 @@ func main() {
 
 	cacheCmd.AddCommand(cacheClearCmd)
 
+	runScriptCmd := &cobra.Command{
+		Use:     "run-script [script]",
+		Short:   "Run scripts defined in composer.json",
+		Aliases: []string{"run"},
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runScript(args[0])
+		},
+	}
+
 	rootCmd.AddCommand(
 		installCmd,
 		requireCmd,
@@ -155,6 +166,7 @@ func main() {
 		treeCmd,
 		validateCmd,
 		cacheCmd,
+		runScriptCmd,
 	)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -181,6 +193,14 @@ func runInstall(forceResolve bool) error {
 
 	fmt.Printf("📦 Project: %s\n", composer.Name)
 	fmt.Printf("📝 Description: %s\n\n", composer.Description)
+
+	scriptRunner := scripts.NewRunner(verbose)
+
+	if forceResolve {
+		scriptRunner.Run("pre-update-cmd", composer)
+	} else {
+		scriptRunner.Run("pre-install-cmd", composer)
+	}
 
 	client := packagist.NewClient()
 	res := resolver.NewResolver(client)
@@ -254,9 +274,11 @@ func runInstall(forceResolve bool) error {
 	logVerbose("Generating PSR-4 autoload files")
 
 	gen := autoload.NewGenerator()
+	scriptRunner.Run("pre-autoload-dump", composer)
 	if err := gen.Generate(composer, packages); err != nil {
 		return fmt.Errorf("autoload generation failed: %w", err)
 	}
+	scriptRunner.Run("post-autoload-dump", composer)
 
 	fmt.Println("🔒 Generating composer.lock...")
 	logVerbose("Generating lock file")
@@ -264,6 +286,12 @@ func runInstall(forceResolve bool) error {
 	lockGen := lockfile.NewGenerator()
 	if err := lockGen.Generate(composer, packages); err != nil {
 		return fmt.Errorf("lock file generation failed: %w", err)
+	}
+
+	if forceResolve {
+		scriptRunner.Run("post-update-cmd", composer)
+	} else {
+		scriptRunner.Run("post-install-cmd", composer)
 	}
 
 	fmt.Println("\n✨ Installation complete!")
@@ -609,4 +637,14 @@ func runValidate(strict bool) error {
 
 	fmt.Println("\n✅ composer.json is valid!")
 	return nil
+}
+
+func runScript(scriptName string) error {
+	composer, err := parser.ParseComposerJSON("composer.json")
+	if err != nil {
+		return fmt.Errorf("failed to parse composer.json: %w", err)
+	}
+
+	runner := scripts.NewRunner(verbose)
+	return runner.Run(scriptName, composer)
 }
