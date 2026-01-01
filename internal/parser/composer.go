@@ -34,11 +34,11 @@ type Author struct {
 
 // AutoloadConfig represents autoload configuration
 type AutoloadConfig struct {
-	PSR4                map[string]string `json:"psr-4,omitempty"`
-	PSR0                map[string]string `json:"psr-0,omitempty"`
-	Classmap            []string          `json:"classmap,omitempty"`
-	Files               []string          `json:"files,omitempty"`
-	ExcludeFromClassmap []string          `json:"exclude-from-classmap,omitempty"`
+	PSR4                map[string]interface{} `json:"psr-4,omitempty"`
+	PSR0                map[string]interface{} `json:"psr-0,omitempty"`
+	Classmap            []string               `json:"classmap,omitempty"`
+	Files               []string               `json:"files,omitempty"`
+	ExcludeFromClassmap []string               `json:"exclude-from-classmap,omitempty"`
 }
 
 // ComposerLock represents the structure of composer.lock

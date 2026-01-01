@@ -490,7 +490,7 @@ func runInit() error {
 			"php": "^8.1",
 		},
 		Autoload: parser.AutoloadConfig{
-			PSR4: map[string]string{
+			PSR4: map[string]interface{}{
 				"App\\": "src/",
 			},
 		},

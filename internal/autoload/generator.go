@@ -52,10 +52,14 @@ func (g *Generator) generateAutoloadFilesPHP(composer *parser.ComposerJSON, pack
 	sb.WriteString("$baseDir = dirname($vendorDir);\n\n")
 
 	// 1. Root Project Files
-	for _, file := range composer.Autoload.Files {
-		f := strings.TrimPrefix(file, "/")
-		sb.WriteString(fmt.Sprintf("require_once $baseDir . '/%s';\n", f))
+	processRootFiles := func(config parser.AutoloadConfig) {
+		for _, file := range config.Files {
+			f := strings.TrimPrefix(file, "/")
+			sb.WriteString(fmt.Sprintf("require_once $baseDir . '/%s';\n", f))
+		}
 	}
+	processRootFiles(composer.Autoload)
+	processRootFiles(composer.AutoloadDev)
 
 	// 2. Package Files
 	for _, pkg := range packages {
@@ -236,14 +240,16 @@ func (g *Generator) generatePSR4(composer *parser.ComposerJSON, packages []*reso
 	psr4Map := make(map[string][]string)
 
 	// 1. Process Project's own autoload
-	for namespace, path := range composer.Autoload.PSR4 {
-		namespace = strings.TrimSpace(namespace)
-		if !strings.HasSuffix(namespace, "\\") {
-			namespace += "\\"
+	processRootPSR := func(config parser.AutoloadConfig) {
+		for namespace, path := range config.PSR4 {
+			g.addPSREntry(psr4Map, namespace, path, "$baseDir")
 		}
-		path = strings.TrimSuffix(path, "/")
-		psr4Map[namespace] = append(psr4Map[namespace], fmt.Sprintf("$baseDir . '/%s'", path))
+		for namespace, path := range config.PSR0 {
+			g.addPSREntry(psr4Map, namespace, path, "$baseDir")
+		}
 	}
+	processRootPSR(composer.Autoload)
+	processRootPSR(composer.AutoloadDev)
 
 	// 2. Process Packages
 	for _, pkg := range packages {
@@ -259,42 +265,7 @@ func (g *Generator) generatePSR4(composer *parser.ComposerJSON, packages []*reso
 		processConfig := func(configKey string) {
 			if config, ok := autoloadConfig[configKey].(map[string]interface{}); ok {
 				for namespace, path := range config {
-					namespace = strings.TrimSpace(namespace)
-					if !strings.HasSuffix(namespace, "\\") {
-						namespace += "\\"
-					}
-
-					var paths []string
-					switch v := path.(type) {
-					case string:
-						paths = append(paths, v)
-					case []interface{}:
-						for _, p := range v {
-							if str, ok := p.(string); ok {
-								paths = append(paths, str)
-							}
-						}
-					}
-
-					for _, p := range paths {
-						p = strings.TrimPrefix(p, "/")
-						if p != "" {
-							p = "/" + p
-						}
-
-						fullPath := fmt.Sprintf("$vendorDir . '/%s%s'", pkg.Name, p)
-
-						exists := false
-						for _, existing := range psr4Map[namespace] {
-							if existing == fullPath {
-								exists = true
-								break
-							}
-						}
-						if !exists {
-							psr4Map[namespace] = append(psr4Map[namespace], fullPath)
-						}
-					}
+					g.addPSREntry(psr4Map, namespace, path, fmt.Sprintf("$vendorDir . '/%s'", pkg.Name))
 				}
 			}
 		}
@@ -318,4 +289,46 @@ func (g *Generator) generatePSR4(composer *parser.ComposerJSON, packages []*reso
 
 	path := filepath.Join(g.vendorDir, "autoload_psr4.php")
 	return os.WriteFile(path, []byte(mappings.String()), 0644)
+}
+
+func (g *Generator) addPSREntry(psrMap map[string][]string, namespace string, path interface{}, base string) {
+	namespace = strings.TrimSpace(namespace)
+	if !strings.HasSuffix(namespace, "\\") {
+		namespace += "\\"
+	}
+
+	var paths []string
+	switch v := path.(type) {
+	case string:
+		paths = append(paths, v)
+	case []interface{}:
+		for _, p := range v {
+			if str, ok := p.(string); ok {
+				paths = append(paths, str)
+			}
+		}
+	}
+
+	for _, p := range paths {
+		p = strings.TrimPrefix(p, "/")
+		p = strings.TrimSuffix(p, "/")
+
+		var fullPath string
+		if p == "" || p == "." {
+			fullPath = base
+		} else {
+			fullPath = fmt.Sprintf("%s . '/%s'", base, p)
+		}
+
+		exists := false
+		for _, existing := range psrMap[namespace] {
+			if existing == fullPath {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			psrMap[namespace] = append(psrMap[namespace], fullPath)
+		}
+	}
 }

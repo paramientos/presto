@@ -151,15 +151,6 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 		return nil
 	}
 
-	pkg := &Package{
-		Name:     name,
-		Version:  version,
-		URL:      downloadURL,
-		Require:  versionInfo.Require,
-		Autoload: versionInfo.Autoload,
-	}
-	*packages = append(*packages, pkg)
-
 	r.resolved[name] = version
 
 	for depName, depConstraint := range versionInfo.Require {
@@ -171,6 +162,15 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 			return err
 		}
 	}
+
+	pkg := &Package{
+		Name:     name,
+		Version:  version,
+		URL:      downloadURL,
+		Require:  versionInfo.Require,
+		Autoload: versionInfo.Autoload,
+	}
+	*packages = append(*packages, pkg)
 
 	return nil
 }
