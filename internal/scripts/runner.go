@@ -68,13 +68,46 @@ func (r *Runner) executeCommand(command string, composer *parser.ComposerJSON) e
 		}
 		// Wrap class call in a PHP runner command
 		// We need to include vendor/autoload.php if it exists
-		autoloadPath := "vendor/autoload.php"
-		phpScript := fmt.Sprintf("require '%s'; %s();", autoloadPath, command)
+		vendorDir := "vendor"
+		if composer != nil && composer.Config != nil {
+			if v, ok := composer.Config["vendor-dir"].(string); ok {
+				vendorDir = v
+			} else if v, ok := composer.Config["vendorDir"].(string); ok {
+				vendorDir = v
+			}
+		}
+
+		autoloadPath := filepath.Join(vendorDir, "autoload.php")
 		if _, err := os.Stat(autoloadPath); os.IsNotExist(err) {
 			// If autoloader doesn't exist yet, we can't call classes easily
 			return fmt.Errorf("cannot call PHP class %s because %s is missing", command, autoloadPath)
 		}
-		command = fmt.Sprintf("php -r \"%s\"", phpScript)
+
+		// Improved PHP snippet to mock Composer Event system
+		// This fixes the "Too few arguments" error common in Laravel scripts (ArgumentCountError)
+		phpSnippet := fmt.Sprintf(`
+require_once '%s';
+if (!class_exists('Composer\Script\Event')) {
+    eval('namespace Composer\Script; class Event {
+        public function getComposer() {
+            return new class {
+                public function getConfig() {
+                    return new class {
+                        public function get($k) { return "%s"; }
+                    };
+                }
+            };
+        }
+    }');
+}
+%s(new \Composer\Script\Event());
+`, autoloadPath, vendorDir, command)
+
+		// Trim and replace newlines to make it a one-liner for php -r
+		phpSnippet = strings.ReplaceAll(strings.TrimSpace(phpSnippet), "\n", " ")
+		// Use single quotes for the shell command to avoid $ issues and escape internal single quotes
+		escapedSnippet := strings.ReplaceAll(phpSnippet, "'", "'\\''")
+		command = fmt.Sprintf("php -r '%s'", escapedSnippet)
 	}
 
 	// Case 3: @php shortcut
