@@ -9,19 +9,19 @@ import (
 
 // ComposerJSON represents the structure of composer.json
 type ComposerJSON struct {
-	Name         string                   `json:"name,omitempty"`
-	Description  string                   `json:"description,omitempty"`
-	Type         string                   `json:"type,omitempty"`
-	License      string                   `json:"license,omitempty"`
-	Authors      []Author                 `json:"authors,omitempty"`
-	Require      map[string]string        `json:"require,omitempty"`
-	RequireDev   map[string]string        `json:"require-dev,omitempty"`
-	Autoload     AutoloadConfig           `json:"autoload,omitempty"`
-	AutoloadDev  AutoloadConfig           `json:"autoload-dev,omitempty"`
-	Scripts      map[string]interface{}   `json:"scripts,omitempty"`
-	Config       map[string]interface{}   `json:"config,omitempty"`
-	Repositories []map[string]interface{} `json:"repositories,omitempty"`
-	Extra        map[string]interface{}   `json:"extra,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Description  string                 `json:"description,omitempty"`
+	Type         string                 `json:"type,omitempty"`
+	License      string                 `json:"license,omitempty"`
+	Authors      []Author               `json:"authors,omitempty"`
+	Require      map[string]string      `json:"require,omitempty"`
+	RequireDev   map[string]string      `json:"require-dev,omitempty"`
+	Autoload     AutoloadConfig         `json:"autoload,omitempty"`
+	AutoloadDev  AutoloadConfig         `json:"autoload-dev,omitempty"`
+	Scripts      map[string]interface{} `json:"scripts,omitempty"`
+	Config       map[string]interface{} `json:"config,omitempty"`
+	Repositories interface{}            `json:"repositories,omitempty"`
+	Extra        map[string]interface{} `json:"extra,omitempty"`
 }
 
 // Author represents a package author
