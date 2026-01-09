@@ -5,6 +5,11 @@ All notable changes to Presto will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11] - 2026-01-09
+
+### Fixed
+- 🐛 Handle repositories root key in composer.json (Fix #6)
+
 ## [0.1.10] - 2026-01-01
 
 ### Added
@@ -121,6 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.11]: https://github.com/paramientos/presto/releases/tag/v0.1.11
 [0.1.10]: https://github.com/paramientos/presto/releases/tag/v0.1.10
 [0.1.9]: https://github.com/paramientos/presto/releases/tag/v0.1.9
 [0.1.8]: https://github.com/paramientos/presto/releases/tag/v0.1.8
