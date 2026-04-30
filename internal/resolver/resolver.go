@@ -199,20 +199,25 @@ func (r *Resolver) findMatchingVersion(info *packagist.PackageInfo, constraint s
 
 	var bestVersion string
 	var bestSemver *semver.Version
+	var bestFourth int // tiebreaker for four-part versions
 
 	for version := range info.Versions {
 		if strings.Contains(version, "dev") {
 			continue
 		}
 
-		v, err := semver.NewVersion(r.normalizeVersion(version))
+		normalized := r.normalizeVersion(version)
+		v, err := semver.NewVersion(normalized)
 		if err != nil {
 			continue
 		}
 		if c.Check(v) {
-			if bestSemver == nil || v.GreaterThan(bestSemver) {
+			fourth := fourthSegment(version)
+			if bestSemver == nil || v.GreaterThan(bestSemver) ||
+				(v.Equal(bestSemver) && fourth > bestFourth) {
 				bestSemver = v
 				bestVersion = version
+				bestFourth = fourth
 			}
 		}
 	}
@@ -227,6 +232,7 @@ func (r *Resolver) findMatchingVersion(info *packagist.PackageInfo, constraint s
 func (r *Resolver) findLatestStable(info *packagist.PackageInfo) string {
 	var latest string
 	var latestSemver *semver.Version
+	var latestFourth int
 
 	for version := range info.Versions {
 		if strings.Contains(version, "dev") {
@@ -237,9 +243,15 @@ func (r *Resolver) findLatestStable(info *packagist.PackageInfo) string {
 		if err != nil {
 			continue
 		}
-		if latestSemver == nil || v.GreaterThan(latestSemver) {
+		if v.Prerelease() != "" {
+			continue
+		}
+		fourth := fourthSegment(version)
+		if latestSemver == nil || v.GreaterThan(latestSemver) ||
+			(v.Equal(latestSemver) && fourth > latestFourth) {
 			latestSemver = v
 			latest = version
+			latestFourth = fourth
 		}
 	}
 
@@ -250,6 +262,28 @@ func (r *Resolver) findLatestStable(info *packagist.PackageInfo) string {
 	}
 
 	return latest
+}
+
+// fourthSegment extracts the numeric fourth version segment from a Composer
+// four-part version string (e.g. "v9.18.1.10" → 10). Returns 0 if absent.
+func fourthSegment(version string) int {
+	version = strings.TrimPrefix(version, "v")
+	parts := strings.SplitN(version, ".", 5)
+	if len(parts) != 4 {
+		return 0
+	}
+	// Only parse if purely numeric (no pre-release suffix)
+	if strings.ContainsAny(parts[3], "-+") {
+		return 0
+	}
+	n := 0
+	for _, ch := range parts[3] {
+		if ch < '0' || ch > '9' {
+			return 0
+		}
+		n = n*10 + int(ch-'0')
+	}
+	return n
 }
 
 func (r *Resolver) normalizeConstraint(constraint string) string {
