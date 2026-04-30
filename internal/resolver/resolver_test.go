@@ -67,6 +67,21 @@ func TestNormalizeVersion(t *testing.T) {
 			input:    "2.3.4",
 			expected: "2.3.4",
 		},
+		{
+			name:     "Four-part version (scrivo/highlight.php style)",
+			input:    "v9.18.1.10",
+			expected: "9.18.1",
+		},
+		{
+			name:     "Four-part version without v prefix",
+			input:    "9.18.1.10",
+			expected: "9.18.1",
+		},
+		{
+			name:     "Four-part version with pre-release on fourth segment is left alone",
+			input:    "1.2.3.0-beta",
+			expected: "1.2.3.0-beta",
+		},
 	}
 
 	r := NewResolver(packagist.NewClient())
@@ -125,4 +140,43 @@ func TestResolve(t *testing.T) {
 	// This would require mocking the Packagist client
 	// For now, we'll skip this test
 	t.Skip("Requires Packagist client mocking")
+}
+
+// TestFindMatchingVersion_FourPartVersions verifies that four-part Composer
+// versions like 9.18.1.10 are matched correctly against constraints like ^9.18.
+// This is the root cause of issue #13 (scrivo/highlight.php).
+func TestFindMatchingVersion_FourPartVersions(t *testing.T) {
+	r := NewResolver(packagist.NewClient())
+
+	info := &packagist.PackageInfo{
+		Name: "scrivo/highlight.php",
+		Versions: map[string]*packagist.VersionInfo{
+			"v9.18.1.10": {Name: "scrivo/highlight.php", Version: "v9.18.1.10"},
+			"v9.18.1.4":  {Name: "scrivo/highlight.php", Version: "v9.18.1.4"},
+			"v9.12.0.0":  {Name: "scrivo/highlight.php", Version: "v9.12.0.0"},
+			"v9.17.1.0":  {Name: "scrivo/highlight.php", Version: "v9.17.1.0"},
+		},
+	}
+
+	tests := []struct {
+		constraint  string
+		wantVersion string
+	}{
+		{"^9.18", "v9.18.1.10"}, // should pick the highest matching
+		{"^9.12", "v9.18.1.10"}, // ^9.12 allows anything >=9.12 <10
+		{"~9.18.1", "v9.18.1.10"},
+		{">=9.17", "v9.18.1.10"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.constraint, func(t *testing.T) {
+			got, err := r.findMatchingVersion(info, tt.constraint)
+			if err != nil {
+				t.Fatalf("findMatchingVersion(%q) returned error: %v", tt.constraint, err)
+			}
+			if got != tt.wantVersion {
+				t.Errorf("findMatchingVersion(%q) = %q, want %q", tt.constraint, got, tt.wantVersion)
+			}
+		})
+	}
 }
