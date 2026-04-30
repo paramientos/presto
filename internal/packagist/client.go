@@ -43,13 +43,21 @@ type VersionInfo struct {
 	Keywords          []string          `json:"keywords"`
 	Homepage          string            `json:"homepage"`
 	License           []string          `json:"license"`
-	Authors           []interface{}     `json:"authors"`
+	Authors           []Author          `json:"authors"`
 	Require           map[string]string `json:"require"`
 	RequireDev        map[string]string `json:"require-dev"`
 	Autoload          json.RawMessage   `json:"autoload"`
 	Time              string            `json:"time"`
 	Dist              DistInfo          `json:"dist"`
 	Source            SourceInfo        `json:"source"`
+	NotificationURL   string            `json:"notification-url"`
+}
+
+type Author struct {
+	Name     string `json:"name,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Homepage string `json:"homepage,omitempty"`
+	Role     string `json:"role,omitempty"`
 }
 
 // DistInfo represents distribution information
@@ -60,7 +68,6 @@ type DistInfo struct {
 	Shasum    string `json:"shasum"`
 }
 
-// UnmarshalJSON handles "__unset" strings from Packagist API
 func (d *DistInfo) UnmarshalJSON(data []byte) error {
 	if string(data) == "\"__unset\"" || string(data) == "null" {
 		return nil
@@ -69,7 +76,6 @@ func (d *DistInfo) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*Alias)(d))
 }
 
-// SourceInfo represents source repository information
 type SourceInfo struct {
 	Type      string `json:"type"`
 	URL       string `json:"url"`
@@ -144,14 +150,20 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 	// Parse response - Packagist v2 format has "packages" with package name as key
 	var apiResp struct {
 		Packages map[string][]struct {
-			Version     string          `json:"version"`
-			Description string          `json:"description"`
-			Type        string          `json:"type"`
-			Require     json.RawMessage `json:"require"`     // Can be null, [], {}, or map
-			RequireDev  json.RawMessage `json:"require-dev"` // Can be null, [], {}, or map
-			Autoload    json.RawMessage `json:"autoload"`    // Use RawMessage for debugging
-			Dist        DistInfo        `json:"dist"`
-			Source      SourceInfo      `json:"source"`
+			Version         string          `json:"version"`
+			Description     string          `json:"description"`
+			Type            string          `json:"type"`
+			Keywords        []string        `json:"keywords"`
+			Homepage        string          `json:"homepage"`
+			License         []string        `json:"license"`
+			Authors         []Author        `json:"authors"`
+			Require         json.RawMessage `json:"require"`     // Can be null, [], {}, or map
+			RequireDev      json.RawMessage `json:"require-dev"` // Can be null, [], {}, or map
+			Autoload        json.RawMessage `json:"autoload"`    // Use RawMessage for debugging
+			Time            string          `json:"time"`
+			Dist            DistInfo        `json:"dist"`
+			Source          SourceInfo      `json:"source"`
+			NotificationURL string          `json:"notification-url"`
 		} `json:"packages"`
 	}
 
@@ -186,15 +198,21 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 		}
 
 		versionMap[v.Version] = &VersionInfo{
-			Name:        name,
-			Version:     v.Version,
-			Description: v.Description,
-			Type:        v.Type,
-			Require:     require,
-			RequireDev:  requireDev,
-			Autoload:    v.Autoload,
-			Dist:        v.Dist,
-			Source:      v.Source,
+			Name:            name,
+			Version:         v.Version,
+			Description:     v.Description,
+			Type:            v.Type,
+			Keywords:        v.Keywords,
+			Homepage:        v.Homepage,
+			License:         v.License,
+			Authors:         v.Authors,
+			Require:         require,
+			RequireDev:      requireDev,
+			Autoload:        v.Autoload,
+			Time:            v.Time,
+			Dist:            v.Dist,
+			Source:          v.Source,
+			NotificationURL: v.NotificationURL,
 		}
 
 		if v.Description != "" && description == "" {
@@ -215,6 +233,19 @@ func (c *Client) GetPackage(name string) (*PackageInfo, error) {
 	c.cache[name] = info
 
 	return info, nil
+}
+
+// normalizeFourPartVersion truncates a four-part Composer version (e.g. 9.18.1.10)
+// to three parts so it can be parsed by the semver library. The fourth segment is
+// a Composer-specific build qualifier with no semver equivalent.
+func normalizeFourPartVersion(version string) string {
+	version = strings.TrimPrefix(version, "v")
+	if parts := strings.SplitN(version, ".", 5); len(parts) == 4 {
+		if !strings.ContainsAny(parts[3], "-+") {
+			return strings.Join(parts[:3], ".")
+		}
+	}
+	return version
 }
 
 // findLatestStable finds the latest stable version

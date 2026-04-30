@@ -3,6 +3,10 @@
     "description": "A new PHP project",
     "type": "project",
     "license": "MIT",
+    "scripts": {
+        "test": "ss",
+        "echo": "echo"
+    },
     "require": {
         "codedge/laravel-fpdf": "1.12.3",
         "php": "^8.1"

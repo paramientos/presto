@@ -144,12 +144,19 @@ func main() {
 	cacheCmd.AddCommand(cacheClearCmd)
 
 	runScriptCmd := &cobra.Command{
-		Use:     "run-script [script]",
+		Use:     "run-script [script] [-- args...]",
 		Short:   "Run scripts defined in composer.json",
 		Aliases: []string{"run"},
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runScript(args[0])
+			scriptName := args[0]
+			// Strip a leading "--" separator and pass the rest as script arguments.
+			// Supports both: presto run script arg1  and  presto run script -- arg1
+			scriptArgs := args[1:]
+			if len(scriptArgs) > 0 && scriptArgs[0] == "--" {
+				scriptArgs = scriptArgs[1:]
+			}
+			return runScript(scriptName, scriptArgs...)
 		},
 	}
 
@@ -169,7 +176,28 @@ func main() {
 		runScriptCmd,
 	)
 
+	rootCmd.SilenceErrors = true
+	rootCmd.SilenceUsage = true
+
 	if err := rootCmd.Execute(); err != nil {
+		// If cobra doesn't recognise the command, try running it as a composer script.
+		if strings.HasPrefix(err.Error(), "unknown command") && len(os.Args) > 1 {
+			scriptName := os.Args[1]
+			scriptArgs := os.Args[2:]
+			if len(scriptArgs) > 0 && scriptArgs[0] == "--" {
+				scriptArgs = scriptArgs[1:]
+			}
+			if scriptErr := runScript(scriptName, scriptArgs...); scriptErr != nil {
+				// Script not found — surface the original unknown-command error.
+				if strings.Contains(scriptErr.Error(), "script not found") {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", scriptErr)
+				}
+				os.Exit(1)
+			}
+			return
+		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -211,7 +239,7 @@ func runInstall(forceResolve bool) error {
 			fmt.Println("🔒 Installing from composer.lock")
 			lock, err := parser.ParseComposerLock("composer.lock")
 			if err == nil {
-				lockGen := lockfile.NewGenerator()
+				lockGen := lockfile.NewGeneratorWithClient(client)
 				currentHash := lockGen.GenerateContentHash(composer)
 
 				if lock.ContentHash != currentHash {
@@ -283,10 +311,12 @@ func runInstall(forceResolve bool) error {
 	fmt.Println("🔒 Generating composer.lock...")
 	logVerbose("Generating lock file")
 
-	lockGen := lockfile.NewGenerator()
+	lockGen := lockfile.NewGeneratorWithClient(client)
 	if err := lockGen.Generate(composer, packages); err != nil {
 		return fmt.Errorf("lock file generation failed: %w", err)
 	}
+
+	scriptRunner.Run("post-root-package-install", composer)
 
 	if forceResolve {
 		scriptRunner.Run("post-update-cmd", composer)
@@ -639,12 +669,19 @@ func runValidate(strict bool) error {
 	return nil
 }
 
-func runScript(scriptName string) error {
+func runScript(scriptName string, scriptArgs ...string) error {
 	composer, err := parser.ParseComposerJSON("composer.json")
 	if err != nil {
 		return fmt.Errorf("failed to parse composer.json: %w", err)
 	}
 
+	if composer.Scripts == nil {
+		return fmt.Errorf("script not found: %q (no scripts defined in composer.json)", scriptName)
+	}
+	if _, ok := composer.Scripts[scriptName]; !ok {
+		return fmt.Errorf("script not found: %q", scriptName)
+	}
+
 	runner := scripts.NewRunner(verbose)
-	return runner.Run(scriptName, composer)
+	return runner.Run(scriptName, composer, scriptArgs...)
 }

@@ -9,19 +9,21 @@ import (
 
 // ComposerJSON represents the structure of composer.json
 type ComposerJSON struct {
-	Name         string                 `json:"name,omitempty"`
-	Description  string                 `json:"description,omitempty"`
-	Type         string                 `json:"type,omitempty"`
-	License      string                 `json:"license,omitempty"`
-	Authors      []Author               `json:"authors,omitempty"`
-	Require      map[string]string      `json:"require,omitempty"`
-	RequireDev   map[string]string      `json:"require-dev,omitempty"`
-	Autoload     AutoloadConfig         `json:"autoload,omitempty"`
-	AutoloadDev  AutoloadConfig         `json:"autoload-dev,omitempty"`
-	Scripts      map[string]interface{} `json:"scripts,omitempty"`
-	Config       map[string]interface{} `json:"config,omitempty"`
-	Repositories interface{}            `json:"repositories,omitempty"`
-	Extra        map[string]interface{} `json:"extra,omitempty"`
+	Name             string                 `json:"name,omitempty"`
+	Description      string                 `json:"description,omitempty"`
+	Type             string                 `json:"type,omitempty"`
+	License          string                 `json:"license,omitempty"`
+	Authors          []Author               `json:"authors,omitempty"`
+	Require          map[string]string      `json:"require,omitempty"`
+	RequireDev       map[string]string      `json:"require-dev,omitempty"`
+	Autoload         AutoloadConfig         `json:"autoload,omitempty"`
+	AutoloadDev      AutoloadConfig         `json:"autoload-dev,omitempty"`
+	Scripts          map[string]interface{} `json:"scripts,omitempty"`
+	Config           map[string]interface{} `json:"config,omitempty"`
+	Repositories     interface{}            `json:"repositories,omitempty"`
+	Extra            map[string]interface{} `json:"extra,omitempty"`
+	MinimumStability string                 `json:"minimum-stability,omitempty"`
+	PreferStable     bool                   `json:"prefer-stable,omitempty"`
 }
 
 // Author represents a package author
@@ -43,17 +45,18 @@ type AutoloadConfig struct {
 
 // ComposerLock represents the structure of composer.lock
 type ComposerLock struct {
-	Readme           []string          `json:"_readme,omitempty"`
-	ContentHash      string            `json:"content-hash"`
-	Packages         []LockedPackage   `json:"packages"`
-	PackagesDev      []LockedPackage   `json:"packages-dev"`
-	Aliases          []interface{}     `json:"aliases"`
-	MinimumStability string            `json:"minimum-stability,omitempty"`
-	StabilityFlags   map[string]int    `json:"stability-flags,omitempty"`
-	PreferStable     bool              `json:"prefer-stable,omitempty"`
-	PreferLowest     bool              `json:"prefer-lowest,omitempty"`
-	Platform         map[string]string `json:"platform,omitempty"`
-	PlatformDev      map[string]string `json:"platform-dev,omitempty"`
+	Readme            []string          `json:"_readme,omitempty"`
+	ContentHash       string            `json:"content-hash"`
+	Packages          []LockedPackage   `json:"packages"`
+	PackagesDev       []LockedPackage   `json:"packages-dev"`
+	Aliases           []interface{}     `json:"aliases"`
+	MinimumStability  string            `json:"minimum-stability"`
+	StabilityFlags    map[string]int    `json:"stability-flags"`
+	PreferStable      bool              `json:"prefer-stable"`
+	PreferLowest      bool              `json:"prefer-lowest"`
+	Platform          map[string]string `json:"platform"`
+	PlatformDev       map[string]string `json:"platform-dev"`
+	PlatformOverrides map[string]string `json:"platform-overrides,omitempty"`
 }
 
 // LockedPackage represents a package in composer.lock

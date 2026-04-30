@@ -22,6 +22,7 @@ type Package struct {
 	URL      string
 	Require  map[string]string
 	Autoload json.RawMessage
+	IsDev    bool
 }
 
 func NewResolver(client *packagist.Client) *Resolver {
@@ -40,7 +41,7 @@ func (r *Resolver) Resolve(composer *parser.ComposerJSON) ([]*Package, error) {
 			continue
 		}
 
-		if err := r.resolveDependency(name, constraint, &packages); err != nil {
+		if err := r.resolveDependency(name, constraint, false, &packages); err != nil {
 			return nil, fmt.Errorf("failed to resolve %s: %w", name, err)
 		}
 	}
@@ -50,7 +51,7 @@ func (r *Resolver) Resolve(composer *parser.ComposerJSON) ([]*Package, error) {
 			continue
 		}
 
-		if err := r.resolveDependency(name, constraint, &packages); err != nil {
+		if err := r.resolveDependency(name, constraint, true, &packages); err != nil {
 			return nil, fmt.Errorf("failed to resolve dev dependency %s: %w", name, err)
 		}
 	}
@@ -61,9 +62,7 @@ func (r *Resolver) Resolve(composer *parser.ComposerJSON) ([]*Package, error) {
 func (r *Resolver) ResolveFromLock(lock *parser.ComposerLock) ([]*Package, error) {
 	var packages []*Package
 
-	allLocked := append(lock.Packages, lock.PackagesDev...)
-
-	for _, lp := range allLocked {
+	for _, lp := range lock.Packages {
 		autoloadJSON, _ := json.Marshal(lp.Autoload)
 
 		pkg := &Package{
@@ -72,6 +71,21 @@ func (r *Resolver) ResolveFromLock(lock *parser.ComposerLock) ([]*Package, error
 			URL:      lp.Dist.URL,
 			Require:  lp.Require,
 			Autoload: autoloadJSON,
+			IsDev:    false,
+		}
+		packages = append(packages, pkg)
+	}
+
+	for _, lp := range lock.PackagesDev {
+		autoloadJSON, _ := json.Marshal(lp.Autoload)
+
+		pkg := &Package{
+			Name:     lp.Name,
+			Version:  lp.Version,
+			URL:      lp.Dist.URL,
+			Require:  lp.Require,
+			Autoload: autoloadJSON,
+			IsDev:    true,
 		}
 		packages = append(packages, pkg)
 	}
@@ -79,7 +93,7 @@ func (r *Resolver) ResolveFromLock(lock *parser.ComposerLock) ([]*Package, error
 	return packages, nil
 }
 
-func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Package) error {
+func (r *Resolver) resolveDependency(name, constraint string, isDev bool, packages *[]*Package) error {
 	if r.visited[name] {
 		if resolvedVersion, ok := r.resolved[name]; ok {
 			c, err := semver.NewConstraint(r.normalizeConstraint(constraint))
@@ -143,7 +157,7 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 				continue
 			}
 
-			if err := r.resolveDependency(depName, depConstraint, packages); err != nil {
+			if err := r.resolveDependency(depName, depConstraint, isDev, packages); err != nil {
 				return err
 			}
 		}
@@ -158,7 +172,7 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 			continue
 		}
 
-		if err := r.resolveDependency(depName, depConstraint, packages); err != nil {
+		if err := r.resolveDependency(depName, depConstraint, isDev, packages); err != nil {
 			return err
 		}
 	}
@@ -169,6 +183,7 @@ func (r *Resolver) resolveDependency(name, constraint string, packages *[]*Packa
 		URL:      downloadURL,
 		Require:  versionInfo.Require,
 		Autoload: versionInfo.Autoload,
+		IsDev:    isDev,
 	}
 	*packages = append(*packages, pkg)
 
@@ -252,6 +267,18 @@ func (r *Resolver) normalizeVersion(version string) string {
 	version = strings.TrimPrefix(version, "v")
 
 	version = strings.ReplaceAll(version, "-dev", "-alpha")
+
+	// Composer allows four-part versions like 9.18.1.10 (MAJOR.MINOR.PATCH.BUILD).
+	// The Masterminds semver library only understands three parts, so we strip the
+	// fourth segment before parsing. Constraints are written against the first three
+	// parts (e.g. ^9.18), so this is safe and matches Composer's own behaviour.
+	if parts := strings.SplitN(version, ".", 5); len(parts) == 4 {
+		// Only truncate when the fourth part is purely numeric (no pre-release suffix).
+		// If there's a pre-release tag it will be attached to the third segment already.
+		if !strings.ContainsAny(parts[3], "-+") {
+			version = strings.Join(parts[:3], ".")
+		}
+	}
 
 	return version
 }

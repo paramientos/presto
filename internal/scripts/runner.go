@@ -23,7 +23,7 @@ func NewRunner(verbose bool) *Runner {
 }
 
 // Run executes scripts associated with a specific event
-func (r *Runner) Run(event string, composer *parser.ComposerJSON) error {
+func (r *Runner) Run(event string, composer *parser.ComposerJSON, scriptArgs ...string) error {
 	if composer.Scripts == nil {
 		return nil
 	}
@@ -37,11 +37,11 @@ func (r *Runner) Run(event string, composer *parser.ComposerJSON) error {
 
 	switch v := script.(type) {
 	case string:
-		return r.executeCommand(v, composer)
+		return r.executeCommand(v, composer, scriptArgs...)
 	case []interface{}:
 		for _, cmd := range v {
 			if cmdStr, ok := cmd.(string); ok {
-				if err := r.executeCommand(cmdStr, composer); err != nil {
+				if err := r.executeCommand(cmdStr, composer, scriptArgs...); err != nil {
 					// We log the error but for some scripts we might want to continue
 					fmt.Printf("⚠️  Script failed: %v\n", err)
 				}
@@ -52,10 +52,17 @@ func (r *Runner) Run(event string, composer *parser.ComposerJSON) error {
 	return nil
 }
 
-func (r *Runner) executeCommand(command string, composer *parser.ComposerJSON) error {
+func (r *Runner) executeCommand(command string, composer *parser.ComposerJSON, scriptArgs ...string) error {
 	command = strings.TrimSpace(command)
 
-	// Case 1: Reference to another script
+	// Unescape any backslash-escaped double quotes that may have been written
+	// for shell escaping in composer.json (e.g. \"foo\" → "foo"). When we pass
+	// the command as a single argument to sh -c, the shell receives it verbatim
+	// and the backslashes cause PHP/shell parse errors.
+	command = strings.ReplaceAll(command, `\"`, `"`)
+
+	// Case 1: Reference to another script — args are not forwarded to referenced
+	// scripts (matches Composer behaviour).
 	if strings.HasPrefix(command, "@") && !strings.HasPrefix(command, "@php") {
 		refScript := strings.TrimPrefix(command, "@")
 		return r.Run(refScript, composer)
@@ -121,12 +128,27 @@ if (!class_exists('Composer\Script\Event')) {
 		fmt.Printf("🔍 Running command: %s\n", command)
 	}
 
+	// Append any extra arguments passed by the caller (e.g. presto run echo -- foo).
+	// Each argument is shell-quoted so spaces and special characters are safe.
+	if len(scriptArgs) > 0 {
+		quoted := make([]string, len(scriptArgs))
+		for i, a := range scriptArgs {
+			quoted[i] = shellQuote(a)
+		}
+		command = command + " " + strings.Join(quoted, " ")
+	}
+
 	// Prepend vendor/bin to PATH so packages can use their binaries
 	path := os.Getenv("PATH")
 	vendorBin, _ := filepath.Abs("vendor/bin")
 	newPath := vendorBin + string(os.PathListSeparator) + path
 
-	cmd := exec.Command("sh", "-c", command)
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "sh"
+	}
+
+	cmd := exec.Command(shell, "-c", command)
 	cmd.Env = append(os.Environ(), "PATH="+newPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -137,4 +159,10 @@ if (!class_exists('Composer\Script\Event')) {
 	}
 
 	return nil
+}
+
+// shellQuote wraps a string in single quotes, escaping any single quotes
+// within it. This is safe for all POSIX shells.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
