@@ -253,14 +253,14 @@ func (c *Client) findLatestStable(versions map[string]*VersionInfo) string {
 	var latest string
 	var latestVer *semver.Version
 
-	for vStr, _ := range versions {
+	for vStr := range versions {
 		// Skip dev versions
 		if strings.Contains(vStr, "dev") {
 			continue
 		}
 
-		// Parse version
-		v, err := semver.NewVersion(vStr)
+		// Parse version (normalise four-part versions like 9.18.1.10 first)
+		v, err := semver.NewVersion(normalizeFourPartVersion(vStr))
 		if err != nil {
 			// If not a valid semver, try a simple comparison as fallback
 			if latest == "" || vStr > latest {
