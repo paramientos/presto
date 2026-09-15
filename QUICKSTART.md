@@ -66,21 +66,32 @@ presto install
 
 **Output:**
 ```
-🎵 Presto Install
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 Project: myapp/project
-📝 Description: My awesome PHP project
-
-🔍 Resolving dependencies...
-✅ Resolved 47 packages
-
-⬇️  Downloading packages...
-[========================================] 47/47
-
-📝 Generating autoload files...
-
-✨ Installation complete!
+Resolved 47 packages in 1.24s
+Installed 47 packages in 3.51s
+ + doctrine/inflector 2.0.8
+ + laravel/framework v10.34.2
+ + symfony/console v6.4.2
 ```
+
+A spinner runs while each phase works, then the phase collapses to one line. When
+there is nothing new to fetch the second line reads `Audited 47 packages in 38ms`.
+
+The first install of a project that defines scripts stops to ask:
+
+```
+warning: this project defines scripts that presto would run
+
+  post-install-cmd
+    @php artisan package:discover --ansi
+
+? Run these scripts?
+> [o] once    run them for this install only
+  [a] always  trust this project from now on
+  [n] never   skip them
+```
+
+Answer `always` and presto remembers the project. Skipped scripts are named at the
+end of the install so nothing goes missing in silence. See `presto trust --help`.
 
 ### 3. Add Packages
 
@@ -124,19 +135,17 @@ presto audit
 
 **Output:**
 ```
-🎵 Security Audit
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  Found 2 vulnerabilities:
+warning: found 2 vulnerabilities
 
-[HIGH] symfony/http-kernel@5.4.0
-  CVE: CVE-2023-XXXXX
-  Description: Security vulnerability in HTTP kernel
-  Fix: Update to 5.4.31 or later
+HIGH symfony/http-kernel 5.4.0
+  CVE-2023-XXXXX
+  Security vulnerability in HTTP kernel
+  fix: Update to 5.4.31 or later
 
-[MEDIUM] guzzlehttp/guzzle@7.0.1
-  CVE: CVE-2023-YYYYY
-  Description: SSRF vulnerability
-  Fix: Update to 7.5.0 or later
+MEDIUM guzzlehttp/guzzle 7.0.1
+  CVE-2023-YYYYY
+  SSRF vulnerability
+  fix: Update to 7.5.0 or later
 ```
 
 ### 🔍 Dependency Insights
@@ -149,10 +158,6 @@ presto why psr/log
 
 **Output:**
 ```
-🎵 Why is psr/log installed?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 Dependency chain:
 Your project
   └─ symfony/console (^6.0)
       └─ psr/log (^3.0)
@@ -166,17 +171,9 @@ presto why-not doctrine/orm 3.0
 
 **Output:**
 ```
-🎵 Why can't doctrine/orm@3.0 be installed?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-❌ Conflicts found:
-
-  • Requires PHP ^8.2 (you have 8.1)
-  • symfony/http-kernel requires ^6.0
-
-💡 To install:
-  1. Update PHP to 8.2
-  2. Update conflicting packages
+doctrine/orm 3.0 conflicts with:
+  Requires PHP ^8.2 (you have 8.1)
+  symfony/http-kernel requires ^6.0
 ```
 
 ### 📊 Show Installed Packages
@@ -187,26 +184,26 @@ presto show
 
 **Output:**
 ```
-🎵 Installed Packages
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Production
+  guzzlehttp/guzzle  ^7.0
+  monolog/monolog    ^3.0
+  symfony/console    ^6.0
 
-📦 Production Dependencies:
-  • symfony/console: ^6.0
-  • guzzlehttp/guzzle: ^7.0
-  • monolog/monolog: ^3.0
-
-🔧 Development Dependencies:
-  • phpunit/phpunit: ^10.0
+Development
+  phpunit/phpunit  ^10.0
 ```
 
 ## Performance Comparison
 
-**Laravel-sized project (47 packages):**
+**Laravel 10 project (95 packages), same machine, `vendor/` deleted before each run:**
 
-| Command | Composer | Presto | Speedup |
-|---------|----------|--------|---------|
-| First install | 42.3s | 3.8s | **11x faster** |
-| Cached install | 8.2s | 0.4s | **20x faster** |
+| Run | Composer 2.10 | Presto |
+|-----|---------------|--------|
+| Warm cache | 4.62s | **0.48s** |
+| Cold cache | | 5.3s |
+
+Presto caches manifests and archives in `~/.cache/presto`, shared across projects.
+Run `presto cache clear` to drop it.
 
 ## Common Workflows
 

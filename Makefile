@@ -22,9 +22,7 @@ build:
 # Install dependencies
 deps:
 	@echo "📦 Installing dependencies..."
-	$(GOGET) github.com/spf13/cobra@latest
-	$(GOGET) github.com/Masterminds/semver/v3@latest
-	$(GOGET) github.com/schollz/progressbar/v3@latest
+	$(GOMOD) download
 	$(GOMOD) tidy
 	@echo "✅ Dependencies installed"
 

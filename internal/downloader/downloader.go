@@ -7,141 +7,194 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/aras/presto/internal/cache"
+	"github.com/aras/presto/internal/httpx"
 	"github.com/aras/presto/internal/resolver"
-	"github.com/schollz/progressbar/v3"
 )
+
+// maxExtractors caps concurrent extraction. Downloading is latency-bound and
+// wants many workers; writing thousands of small files is disk-bound and slows
+// down when oversubscribed, so the two are limited separately.
+const maxExtractors = 8
 
 // Downloader handles parallel package downloads
 type Downloader struct {
 	workers    int
 	httpClient *http.Client
 	vendorDir  string
+	extracting chan struct{}
 }
 
 // NewDownloader creates a new downloader with specified number of workers
 func NewDownloader(workers int) *Downloader {
+	extractors := runtime.NumCPU()
+	if extractors > maxExtractors {
+		extractors = maxExtractors
+	}
+
+	if extractors < 1 {
+		extractors = 1
+	}
+
 	return &Downloader{
-		workers: workers,
-		httpClient: &http.Client{
-			Timeout: 5 * time.Minute,
-		},
-		vendorDir: "vendor",
+		workers:    workers,
+		httpClient: httpx.New(5*time.Minute, workers),
+		vendorDir:  "vendor",
+		extracting: make(chan struct{}, extractors),
 	}
 }
 
-// DownloadAll downloads all packages in parallel
-func (d *Downloader) DownloadAll(packages []*resolver.Package) error {
-	// Create vendor directory
+// Progress is called as each package lands, with the number finished so far.
+type Progress func(done, total int, name string)
+
+// DownloadAll fetches every package in parallel and returns the ones that were
+// not already in the vendor directory, sorted by name.
+func (d *Downloader) DownloadAll(packages []*resolver.Package, progress Progress) ([]*resolver.Package, error) {
 	if err := os.MkdirAll(d.vendorDir, 0755); err != nil {
-		return fmt.Errorf("failed to create vendor directory: %w", err)
+		return nil, fmt.Errorf("failed to create vendor directory: %w", err)
 	}
 
-	// Create progress bar
-	bar := progressbar.NewOptions(len(packages),
-		progressbar.OptionSetDescription("⬇️  Downloading"),
-		progressbar.OptionSetWidth(40),
-		progressbar.OptionShowCount(),
-		progressbar.OptionShowIts(),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "=",
-			SaucerHead:    ">",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
+	jobs := make(chan *resolver.Package, len(packages))
+	errs := make(chan error, len(packages))
+
+	var (
+		mu        sync.Mutex
+		wg        sync.WaitGroup
+		done      int
+		installed []*resolver.Package
 	)
 
-	// Create worker pool
-	jobs := make(chan *resolver.Package, len(packages))
-	errors := make(chan error, len(packages))
-	var wg sync.WaitGroup
-
-	// Start workers
 	for i := 0; i < d.workers; i++ {
 		wg.Add(1)
+
 		go func() {
 			defer wg.Done()
+
 			for pkg := range jobs {
-				if err := d.downloadPackage(pkg); err != nil {
-					errors <- fmt.Errorf("failed to download %s: %w", pkg.Name, err)
-				} else {
-					_ = bar.Add(1)
+				fetched, err := d.downloadPackage(pkg)
+				if err != nil {
+					errs <- fmt.Errorf("failed to download %s: %w", pkg.Name, err)
+					continue
 				}
+
+				mu.Lock()
+				done++
+				if fetched {
+					installed = append(installed, pkg)
+				}
+				if progress != nil {
+					progress(done, len(packages), pkg.Name)
+				}
+				mu.Unlock()
 			}
 		}()
 	}
 
-	// Send jobs
 	for _, pkg := range packages {
 		jobs <- pkg
 	}
 	close(jobs)
 
-	// Wait for completion
 	wg.Wait()
-	close(errors)
+	close(errs)
 
-	// Check for errors
 	var downloadErrors []error
-	for err := range errors {
+	for err := range errs {
 		downloadErrors = append(downloadErrors, err)
 	}
 
 	if len(downloadErrors) > 0 {
-		return fmt.Errorf("download errors: %v", downloadErrors)
+		return nil, fmt.Errorf("download errors: %v", downloadErrors)
 	}
 
-	_ = bar.Finish()
-	fmt.Println()
+	sort.Slice(installed, func(i, j int) bool {
+		return installed[i].Name < installed[j].Name
+	})
 
-	return nil
+	return installed, nil
 }
 
-// downloadPackage downloads a single package
-func (d *Downloader) downloadPackage(pkg *resolver.Package) error {
-	// Skip if already downloaded
+// downloadPackage reports whether it had to install the package. The archive is
+// kept in the shared cache, so wiping vendor/ costs no network the second time.
+func (d *Downloader) downloadPackage(pkg *resolver.Package) (bool, error) {
 	packageDir := filepath.Join(d.vendorDir, pkg.Name)
 	if _, err := os.Stat(packageDir); err == nil {
-		return nil // Already exists
+		return false, nil
 	}
 
-	// Download archive
-	resp, err := d.httpClient.Get(pkg.URL)
+	archive, err := cache.Archive(pkg.Name, pkg.Version, pkg.URL)
+	if err != nil {
+		return false, fmt.Errorf("failed to open the package cache: %w", err)
+	}
+
+	reused := true
+
+	if _, err := os.Stat(archive); err != nil {
+		reused = false
+
+		if err := d.fetch(pkg.URL, archive); err != nil {
+			return false, err
+		}
+	}
+
+	if err := d.extract(archive, packageDir); err != nil {
+		_ = os.Remove(archive)
+		_ = os.RemoveAll(packageDir)
+
+		if !reused {
+			return false, fmt.Errorf("extraction failed: %w", err)
+		}
+
+		return d.downloadPackage(pkg)
+	}
+
+	return true, nil
+}
+
+// fetch downloads into a sibling temp file and renames, so a killed download
+// never leaves a half-written archive in the cache.
+func (d *Downloader) fetch(url, dest string) error {
+	resp, err := d.httpClient.Get(url)
 	if err != nil {
 		return fmt.Errorf("HTTP request failed: %w", err)
 	}
-	defer resp.Body.Close()
+
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("HTTP status %d", resp.StatusCode)
 	}
 
-	// Create temp file
-	tmpFile, err := os.CreateTemp("", "presto-*.zip")
+	tmpFile, err := os.CreateTemp(filepath.Dir(dest), filepath.Base(dest)+".*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
 
-	// Download to temp file
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+
 	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		_ = tmpFile.Close()
 		return fmt.Errorf("download failed: %w", err)
 	}
 
-	// Close file to ensure everything is flushed to disk before extraction
-	tmpFile.Close()
-
-	// Extract archive
-	if err := d.extractZip(tmpFile.Name(), packageDir); err != nil {
-		return fmt.Errorf("extraction failed: %w", err)
+	if err := tmpFile.Close(); err != nil {
+		return err
 	}
 
-	return nil
+	return os.Rename(tmpFile.Name(), dest)
+}
+
+func (d *Downloader) extract(archive, dest string) error {
+	d.extracting <- struct{}{}
+	defer func() { <-d.extracting }()
+
+	return d.extractZip(archive, dest)
 }
 
 // extractZip extracts a zip archive to the destination directory
@@ -213,8 +266,8 @@ func (d *Downloader) extractFile(file *zip.File, destPath string) error {
 	return nil
 }
 
-// DownloadPackage downloads a single package (public method)
-func (d *Downloader) DownloadPackage(pkg *resolver.Package) error {
+// DownloadPackage reports whether it had to fetch the package.
+func (d *Downloader) DownloadPackage(pkg *resolver.Package) (bool, error) {
 	return d.downloadPackage(pkg)
 }
 

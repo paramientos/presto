@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/aras/presto/internal/parser"
+	"github.com/aras/presto/internal/ui"
 )
 
 // Runner handles the execution of Composer scripts
@@ -33,8 +34,6 @@ func (r *Runner) Run(event string, composer *parser.ComposerJSON, scriptArgs ...
 		return nil
 	}
 
-	fmt.Printf("🚀 Executing script: %s\n", event)
-
 	switch v := script.(type) {
 	case string:
 		return r.executeCommand(v, composer, scriptArgs...)
@@ -42,8 +41,7 @@ func (r *Runner) Run(event string, composer *parser.ComposerJSON, scriptArgs ...
 		for _, cmd := range v {
 			if cmdStr, ok := cmd.(string); ok {
 				if err := r.executeCommand(cmdStr, composer, scriptArgs...); err != nil {
-					// We log the error but for some scripts we might want to continue
-					fmt.Printf("⚠️  Script failed: %v\n", err)
+					ui.Warn("%s: %v", event, err)
 				}
 			}
 		}
@@ -54,6 +52,7 @@ func (r *Runner) Run(event string, composer *parser.ComposerJSON, scriptArgs ...
 
 func (r *Runner) executeCommand(command string, composer *parser.ComposerJSON, scriptArgs ...string) error {
 	command = strings.TrimSpace(command)
+	ui.Note("> %s", command)
 
 	// Unescape any backslash-escaped double quotes that may have been written
 	// for shell escaping in composer.json (e.g. \"foo\" → "foo"). When we pass
@@ -71,7 +70,7 @@ func (r *Runner) executeCommand(command string, composer *parser.ComposerJSON, s
 	// Case 2: PHP Class Method call (e.g. ClassName::method)
 	if strings.Contains(command, "::") && !strings.Contains(command, " ") {
 		if r.Verbose {
-			fmt.Printf("🔍 Detected PHP class call: %s\n", command)
+			ui.Note("detected PHP class call: %s", command)
 		}
 		// Wrap class call in a PHP runner command
 		// We need to include vendor/autoload.php if it exists
@@ -125,7 +124,7 @@ if (!class_exists('Composer\Script\Event')) {
 	}
 
 	if r.Verbose {
-		fmt.Printf("🔍 Running command: %s\n", command)
+		ui.Note("running: %s", command)
 	}
 
 	// Append any extra arguments passed by the caller (e.g. presto run echo -- foo).
